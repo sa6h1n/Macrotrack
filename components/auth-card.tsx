@@ -1,0 +1,5 @@
+import Link from "next/link";
+
+export function AuthCard({ title, description, children, footer }: { title: string; description: string; children: React.ReactNode; footer?: React.ReactNode }) {
+  return <main className="grid min-h-screen place-items-center bg-canvas px-4 py-8 dark:bg-[#101612]"><div className="w-full max-w-md"><Link href="/app" className="flex items-center justify-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-moss-600 text-lg font-black text-white">M</span><span className="text-xl font-bold dark:text-white">MacroTrack</span></Link><section className="mt-7 rounded-xl border border-[#dfe7df] bg-white p-6 shadow-soft dark:border-white/10 dark:bg-[#18201a] sm:p-8"><h1 className="text-2xl font-bold dark:text-white">{title}</h1><p className="mt-2 text-sm leading-6 text-[#68776c] dark:text-[#aebbb0]">{description}</p><div className="mt-6">{children}</div>{footer && <div className="mt-6 border-t border-[#edf1ed] pt-5 text-center text-sm text-[#657469] dark:border-white/10 dark:text-[#aebbb0]">{footer}</div>}</section></div></main>;
+}

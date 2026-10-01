@@ -1,0 +1,12 @@
+node_modules
+.next
+.env.local
+.env
+coverage
+*.tsbuildinfo
+
+# macOS
+.DS_Store
+
+# Supabase local state
+supabase/.temp/

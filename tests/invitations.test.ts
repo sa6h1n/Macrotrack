@@ -1,0 +1,3 @@
+import { describe, expect, it } from "vitest";
+import { canRespondToInvitation, responseStatus } from "@/lib/groups/invitations";
+describe("group invitations", () => { it("allows only the invited user to respond to a pending invite", () => { expect(canRespondToInvitation("pending", "user-b", "user-b")).toBe(true); expect(canRespondToInvitation("pending", "user-b", "user-a")).toBe(false); expect(canRespondToInvitation("accepted", "user-b", "user-b")).toBe(false); }); it("has a clear accepted or declined outcome", () => { expect(responseStatus(true)).toBe("accepted"); expect(responseStatus(false)).toBe("declined"); }); });
