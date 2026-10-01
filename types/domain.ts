@@ -40,6 +40,8 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
+  memberId: string;
+  avatar: "🐐" | "⚡";
   calorieTarget: number;
   proteinTarget: number;
   carbTarget: number;

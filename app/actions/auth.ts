@@ -42,35 +42,38 @@ export async function signUp(formData: FormData) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { name },
-      emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(
-        safeNext
-      )}`,
     },
   });
 
   if (error) {
     redirect(
       `/signup?message=${encodeURIComponent(
-        "Unable to create your account. Try a different email."
+        "Unable to create your account. Please check your details and try again."
       )}&next=${encodeURIComponent(safeNext)}`
     );
   }
 
-  redirect(
-    `/login?message=${encodeURIComponent(
-      "Check your email to confirm your account."
-    )}&next=${encodeURIComponent(safeNext)}`
-  );
+  if (!data.session) {
+    redirect(
+      `/login?message=${encodeURIComponent(
+        "Account created. Please log in."
+      )}&next=${encodeURIComponent(safeNext)}`
+    );
+  }
+
+  redirect(safeNext);
 }
 
 export async function signOut() {
   const supabase = await createClient();
+
   await supabase.auth.signOut();
+
   redirect("/login");
 }
 

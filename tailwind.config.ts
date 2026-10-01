@@ -6,16 +6,35 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#17211b",
-        canvas: "#f7f8f5",
-        moss: { 50: "#eef6ec", 100: "#dcefd8", 500: "#5d8e59", 600: "#477648", 700: "#355d39" },
-        coral: { 50: "#fff1ec", 400: "#ef8868", 500: "#dc6d4c" },
-        gold: { 50: "#fff8e4", 400: "#e5b64f" }
+        ink: "#17191d",
+        canvas: "#f5f6f8",
+
+        moss: {
+          50: "#f0eeff",
+          100: "#e4e0ff",
+          500: "#8170e6",
+          600: "#6957d8",
+          700: "#5f4ec7",
+        },
+
+        coral: {
+          50: "#fff1f1",
+          400: "#ef7777",
+          500: "#d94c4c",
+        },
+
+        gold: {
+          50: "#fff8e4",
+          400: "#e5b64f",
+        },
       },
-      boxShadow: { soft: "0 12px 32px rgb(36 54 42 / 0.08)" }
-    }
+
+      boxShadow: {
+        soft: "0 12px 32px rgb(23 25 29 / 0.08)",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };
 
 export default config;

@@ -84,12 +84,12 @@ export default async function HistoryPage() {
       />
 
       {days.length ? (
-        <div className="mt-7 overflow-hidden rounded-lg border border-[#dfe7df] bg-white shadow-sm dark:border-white/10 dark:bg-[#18201a]">
+        <div className="mt-7 overflow-hidden rounded-lg border border-[#e1e4e8] bg-white shadow-sm dark:border-white/10 dark:bg-[#181b21]">
           {days.map(([dateKey, totals]) => (
             <Link
               href={`/app?date=${dateKey}`}
               key={dateKey}
-              className="flex items-center gap-4 border-b border-[#edf1ed] px-4 py-4 last:border-0 hover:bg-[#fafcf9] dark:border-white/10 dark:hover:bg-white/5"
+              className="flex items-center gap-4 border-b border-[#e9ebef] px-4 py-4 last:border-0 hover:bg-[#f8f9fb] dark:border-white/10 dark:hover:bg-white/5"
             >
               <div className="grid size-11 shrink-0 place-items-center rounded-md bg-moss-50 text-center text-xs font-bold text-moss-700 dark:bg-moss-500/15 dark:text-moss-100">
                 <span>{formatMonth(dateKey)}</span>
@@ -100,7 +100,7 @@ export default async function HistoryPage() {
 
               <div className="min-w-0 flex-1">
                 <p className="font-bold">{formatDate(dateKey)}</p>
-                <p className="mt-1 text-sm text-[#6c7b70] dark:text-[#aebbb0]">
+                <p className="mt-1 text-sm text-[#6c7b70] dark:text-[#aeb4bf]">
                   {Math.round(totals.calories).toLocaleString()} kcal · {totals.protein.toFixed(1)}g protein
                 </p>
               </div>
@@ -110,9 +110,9 @@ export default async function HistoryPage() {
           ))}
         </div>
       ) : (
-        <div className="mt-7 rounded-lg border border-dashed border-[#dfe7df] bg-white px-6 py-12 text-center dark:border-white/10 dark:bg-[#18201a]">
+        <div className="mt-7 rounded-lg border border-dashed border-[#e1e4e8] bg-white px-6 py-12 text-center dark:border-white/10 dark:bg-[#181b21]">
           <p className="font-bold">No history yet</p>
-          <p className="mt-1 text-sm text-[#6c7b70] dark:text-[#aebbb0]">
+          <p className="mt-1 text-sm text-[#6c7b70] dark:text-[#aeb4bf]">
             Start logging food from Home and your completed days will appear here.
           </p>
           <Link

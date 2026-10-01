@@ -47,17 +47,17 @@ type DialogProps = {
 function Dialog({ title, description, onClose, children }: DialogProps) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-md rounded-2xl border border-[#dfe7df] bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[#18201a]">
+      <div className="w-full max-w-md rounded-2xl border border-[#e1e4e8] bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[#181b21]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-black">{title}</h2>
-            <p className="mt-1 text-sm text-[#718074]">{description}</p>
+            <p className="mt-1 text-sm text-[#858b95]">{description}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md p-1.5 text-[#718074] hover:bg-black/5 dark:hover:bg-white/10"
+            className="rounded-md p-1.5 text-[#858b95] hover:bg-black/5 dark:hover:bg-white/10"
           >
             <X size={20} />
           </button>
@@ -144,45 +144,47 @@ export default function TogetherPage() {
     void load();
   }, []);
 
-  async function createGroup() {
-    const name = newGroupName.trim();
-    if (!name) {
-      setError("Give your group a name first.");
-      return;
-    }
+ async function createGroup() {
+  const name = newGroupName.trim();
 
-    setSaving(true);
-    setError("");
-    setMessage("");
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setSaving(false);
-      setError("Please sign in again before creating a group.");
-      return;
-    }
-
-    const { data, error: createError } = await supabase
-      .from("groups")
-      .insert({ name, created_by: user.id, join_mode: joinMode })
-      .select("id")
-      .single();
-
-    setSaving(false);
-
-    if (createError) {
-      setError(createError.message);
-      return;
-    }
-
-    setNewGroupName("");
-    setJoinMode("invite_only");
-    setShowCreateGroup(false);
-    setMessage(`"${name}" created. You're the owner.`);
-    await load(data?.id);
+  if (!name) {
+    setError("Give your group a name first.");
+    return;
   }
+
+  setSaving(true);
+  setError("");
+  setMessage("");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    setSaving(false);
+    setError("Please sign in again before creating a group.");
+    return;
+  }
+
+  const { data, error: createError } = await supabase.rpc("create_group", {
+    group_name: name,
+    group_join_mode: joinMode,
+  });
+
+  setSaving(false);
+
+  if (createError) {
+    setError(createError.message);
+    return;
+  }
+
+  setNewGroupName("");
+  setJoinMode("invite_only");
+  setShowCreateGroup(false);
+  setMessage(`"${name}" created. You're the owner.`);
+
+  await load(data);
+}
 
   function openEditGroup() {
     if (!selectedGroup || !owner) return;
@@ -401,7 +403,7 @@ export default function TogetherPage() {
             >
               <div className="flex-1 text-sm">
                 <strong>{i.groups?.name ?? "Group"}</strong>
-                <span className="ml-2 text-[#718074]">You were invited to join.</span>
+                <span className="ml-2 text-[#858b95]">You were invited to join.</span>
               </div>
               <button
                 type="button"
@@ -423,7 +425,7 @@ export default function TogetherPage() {
       )}
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[260px_1fr]">
-        <aside className="rounded-lg border border-[#dfe7df] bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#18201a]">
+        <aside className="rounded-lg border border-[#e1e4e8] bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#181b21]">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-bold">Your groups</h2>
             <button
@@ -451,7 +453,7 @@ export default function TogetherPage() {
                 className={`w-full rounded-md px-3 py-2.5 text-left text-sm font-bold ${
                   g.id === groupId
                     ? "bg-moss-50 text-moss-700 dark:bg-moss-500/15 dark:text-moss-100"
-                    : "hover:bg-[#f5f8f4] dark:hover:bg-white/5"
+                    : "hover:bg-[#f3f4f6] dark:hover:bg-white/5"
                 }`}
               >
                 {g.name}
@@ -460,7 +462,7 @@ export default function TogetherPage() {
             ))}
             {!groups.length && (
               <div className="rounded-lg border border-dashed p-4 text-center">
-                <p className="text-sm text-[#718074]">Create your first group to start tracking together.</p>
+                <p className="text-sm text-[#858b95]">Create your first group to start tracking together.</p>
                 <button
                   type="button"
                   onClick={() => setShowCreateGroup(true)}
@@ -477,7 +479,7 @@ export default function TogetherPage() {
           <section className="rounded-xl bg-ink p-5 text-white shadow-sm sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-[#b8c8ba]">{selectedGroup?.name ?? "No group selected"}</p>
+                <p className="text-sm font-medium text-[#b8bcc5]">{selectedGroup?.name ?? "No group selected"}</p>
                 <h2 className="mt-1 text-2xl font-black tracking-tight">Today, together.</h2>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -495,7 +497,7 @@ export default function TogetherPage() {
                       <MoreHorizontal size={18} />
                     </button>
                     {showGroupActions && (
-                      <div className="absolute right-0 top-11 z-20 w-44 overflow-hidden rounded-lg border border-white/10 bg-[#18201a] p-1 shadow-xl">
+                      <div className="absolute right-0 top-11 z-20 w-44 overflow-hidden rounded-lg border border-white/10 bg-[#181b21] p-1 shadow-xl">
                         <button
                           type="button"
                           onClick={openEditGroup}
@@ -535,17 +537,17 @@ export default function TogetherPage() {
               <div className="rounded-lg bg-white/10 p-4">
                 <div className="flex items-center gap-2 text-sm text-[#cbd8cd]"><Trophy size={16} />Daily grind</div>
                 <p className="mt-1 text-2xl font-black">{topScore}%</p>
-                <p className="text-xs text-[#b8c8ba]">top goal completion</p>
+                <p className="text-xs text-[#b8bcc5]">top goal completion</p>
               </div>
               <div className="rounded-lg bg-white/10 p-4">
                 <div className="flex items-center gap-2 text-sm text-[#cbd8cd]"><Flame size={16} />Group rhythm</div>
                 <p className="mt-1 text-2xl font-black">{members.length ? "Active" : "—"}</p>
-                <p className="text-xs text-[#b8c8ba]">keep logging consistently</p>
+                <p className="text-xs text-[#b8bcc5]">keep logging consistently</p>
               </div>
               <div className="rounded-lg bg-white/10 p-4">
                 <div className="text-sm text-[#cbd8cd]">Privacy first</div>
                 <p className="mt-1 text-sm font-bold">Targets stay personal</p>
-                <p className="text-xs text-[#b8c8ba]">only shared metrics appear</p>
+                <p className="text-xs text-[#b8bcc5]">only shared metrics appear</p>
               </div>
             </div>
           </section>
@@ -556,7 +558,7 @@ export default function TogetherPage() {
               const pp = calculateGoalProgress(Number(m.protein || 0), Number(m.protein_target || 0));
               const score = Math.round((Math.min(cp, 100) + Math.min(pp, 100)) / 2);
               return (
-                <article key={m.user_id} className="rounded-lg border border-[#dfe7df] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#18201a]">
+                <article key={m.user_id} className="rounded-lg border border-[#e1e4e8] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#181b21]">
                   <div className="flex items-start gap-3">
                     <span className="grid size-10 shrink-0 place-items-center rounded-full bg-moss-600 text-sm font-black text-white">{index + 1}</span>
                     <div className="min-w-0 flex-1">
@@ -564,48 +566,48 @@ export default function TogetherPage() {
                         <h3 className="font-black">{m.name}</h3>
                         {index === 0 && <span className="rounded-full bg-gold-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-gold-700">Top today</span>}
                       </div>
-                      <p className="mt-1 text-xs text-[#718074]">Goal completion · {score}%</p>
+                      <p className="mt-1 text-xs text-[#858b95]">Goal completion · {score}%</p>
                     </div>
-                    {owner && index > 0 && <button type="button" onClick={() => void removeMember(m.user_id)} className="text-xs font-bold text-[#718074] hover:text-red-600">Remove</button>}
+                    {owner && index > 0 && <button type="button" onClick={() => void removeMember(m.user_id)} className="text-xs font-bold text-[#858b95] hover:text-red-600">Remove</button>}
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {m.calorie_target != null && (
                       <div>
                         <div className="flex justify-between text-xs font-bold"><span>Calories</span><span>{m.calories ?? 0} / {m.calorie_target} kcal</span></div>
-                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e8eee8]"><div className="h-full rounded-full bg-moss-600" style={{ width: `${Math.min(cp, 100)}%` }} /></div>
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e4e6ea]"><div className="h-full rounded-full bg-moss-600" style={{ width: `${Math.min(cp, 100)}%` }} /></div>
                       </div>
                     )}
                     {m.protein_target != null && (
                       <div>
                         <div className="flex justify-between text-xs font-bold"><span>Protein</span><span>{m.protein ?? 0} / {m.protein_target} g</span></div>
-                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e8eee8]"><div className="h-full rounded-full bg-gold-400" style={{ width: `${Math.min(pp, 100)}%` }} /></div>
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e4e6ea]"><div className="h-full rounded-full bg-gold-400" style={{ width: `${Math.min(pp, 100)}%` }} /></div>
                       </div>
                     )}
                     {m.carb_target != null && (
-                      <div className="rounded-lg bg-[#f5f8f4] p-3 dark:bg-white/5">
+                      <div className="rounded-lg bg-[#f3f4f6] p-3 dark:bg-white/5">
                         <div className="flex justify-between text-xs font-bold"><span>Carbs</span><span>{m.carbs ?? 0} / {m.carb_target} g</span></div>
-                        <div className="mt-1 text-xs text-[#718074]">Shared today</div>
+                        <div className="mt-1 text-xs text-[#858b95]">Shared today</div>
                       </div>
                     )}
                     {m.fat_target != null && (
-                      <div className="rounded-lg bg-[#f5f8f4] p-3 dark:bg-white/5">
+                      <div className="rounded-lg bg-[#f3f4f6] p-3 dark:bg-white/5">
                         <div className="flex justify-between text-xs font-bold"><span>Fat</span><span>{m.fat ?? 0} / {m.fat_target} g</span></div>
-                        <div className="mt-1 text-xs text-[#718074]">Shared today</div>
+                        <div className="mt-1 text-xs text-[#858b95]">Shared today</div>
                       </div>
                     )}
                   </div>
-                  {m.weight_kg != null && <p className="mt-3 text-xs text-[#718074]">Weight shared: {m.weight_kg} kg</p>}
+                  {m.weight_kg != null && <p className="mt-3 text-xs text-[#858b95]">Weight shared: {m.weight_kg} kg</p>}
                   {m.meal_details?.length > 0 && (
-                    <details className="mt-4 rounded-lg border border-[#dfe7df] p-3 dark:border-white/10">
+                    <details className="mt-4 rounded-lg border border-[#e1e4e8] p-3 dark:border-white/10">
                       <summary className="cursor-pointer text-sm font-bold">View shared meals</summary>
                       <div className="mt-3 space-y-2">
                         {m.meal_details.map((item, itemIndex) => (
                           <div key={`${item.name}-${itemIndex}`} className="flex items-center justify-between gap-3 text-xs">
                             <div className="min-w-0">
                               <p className="truncate font-bold">{item.name}</p>
-                              <p className="text-[#718074]">{item.meal} · {item.grams} g</p>
+                              <p className="text-[#858b95]">{item.meal} · {item.grams} g</p>
                             </div>
-                            <span className="shrink-0 text-[#718074]">{item.calories} kcal · {item.protein}g P</span>
+                            <span className="shrink-0 text-[#858b95]">{item.calories} kcal · {item.protein}g P</span>
                           </div>
                         ))}
                       </div>
@@ -614,7 +616,7 @@ export default function TogetherPage() {
                 </article>
               );
             })}
-            {!ranked.length && <div className="rounded-lg border border-dashed p-10 text-center text-sm text-[#718074]">Create a group or accept an invitation to start tracking together.</div>}
+            {!ranked.length && <div className="rounded-lg border border-dashed p-10 text-center text-sm text-[#858b95]">Create a group or accept an invitation to start tracking together.</div>}
           </div>
         </main>
       </div>
@@ -640,20 +642,20 @@ export default function TogetherPage() {
               value={editGroupName}
               onChange={(e) => setEditGroupName(e.target.value)}
               maxLength={80}
-              className="mt-2 w-full rounded-lg border border-[#dbe5db] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
+              className="mt-2 w-full rounded-lg border border-[#e1e4e8] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
             />
             <fieldset className="mt-5">
               <legend className="text-sm font-bold">Who can join?</legend>
               <div className="mt-2 grid gap-2">
-                <label className={`cursor-pointer rounded-lg border p-3 ${editJoinMode === "invite_only" ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10" : "border-[#dbe5db] dark:border-white/10"}`}>
+                <label className={`cursor-pointer rounded-lg border p-3 ${editJoinMode === "invite_only" ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10" : "border-[#e1e4e8] dark:border-white/10"}`}>
                   <input type="radio" name="edit-join-mode" value="invite_only" checked={editJoinMode === "invite_only"} onChange={() => setEditJoinMode("invite_only")} className="mr-2" />
                   <span className="font-bold">Invite only</span>
-                  <span className="mt-1 block pl-5 text-xs text-[#718074]">Only people you invite can join.</span>
+                  <span className="mt-1 block pl-5 text-xs text-[#858b95]">Only people you invite can join.</span>
                 </label>
-                <label className={`cursor-pointer rounded-lg border p-3 ${editJoinMode === "link" ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10" : "border-[#dbe5db] dark:border-white/10"}`}>
+                <label className={`cursor-pointer rounded-lg border p-3 ${editJoinMode === "link" ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10" : "border-[#e1e4e8] dark:border-white/10"}`}>
                   <input type="radio" name="edit-join-mode" value="link" checked={editJoinMode === "link"} onChange={() => setEditJoinMode("link")} className="mr-2" />
                   <span className="font-bold">Anyone with the link</span>
-                  <span className="mt-1 block pl-5 text-xs text-[#718074]">Anyone with the private link can join after signing in.</span>
+                  <span className="mt-1 block pl-5 text-xs text-[#858b95]">Anyone with the private link can join after signing in.</span>
                 </label>
               </div>
             </fieldset>
@@ -678,7 +680,7 @@ export default function TogetherPage() {
         >
           <div className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm">
             <p className="font-bold">{selectedGroup.name}</p>
-            <p className="mt-1 text-[#718074]">This action cannot be undone.</p>
+            <p className="mt-1 text-[#858b95]">This action cannot be undone.</p>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <button
@@ -723,20 +725,20 @@ export default function TogetherPage() {
               onChange={(e) => setNewGroupName(e.target.value)}
               placeholder="e.g. Gym Bros"
               maxLength={80}
-              className="mt-2 w-full rounded-lg border border-[#dbe5db] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
+              className="mt-2 w-full rounded-lg border border-[#e1e4e8] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
             />
             <fieldset className="mt-5">
               <legend className="text-sm font-bold">Who can join?</legend>
               <div className="mt-2 grid gap-2">
-                <label className={`cursor-pointer rounded-lg border p-3 ${joinMode === "invite_only" ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10" : "border-[#dbe5db] dark:border-white/10"}`}>
+                <label className={`cursor-pointer rounded-lg border p-3 ${joinMode === "invite_only" ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10" : "border-[#e1e4e8] dark:border-white/10"}`}>
                   <input type="radio" name="join-mode" value="invite_only" checked={joinMode === "invite_only"} onChange={() => setJoinMode("invite_only")} className="mr-2" />
                   <span className="font-bold">Invite only</span>
-                  <span className="mt-1 block pl-5 text-xs text-[#718074]">Only people you invite can join.</span>
+                  <span className="mt-1 block pl-5 text-xs text-[#858b95]">Only people you invite can join.</span>
                 </label>
-                <label className={`cursor-pointer rounded-lg border p-3 ${joinMode === "link" ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10" : "border-[#dbe5db] dark:border-white/10"}`}>
+                <label className={`cursor-pointer rounded-lg border p-3 ${joinMode === "link" ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10" : "border-[#e1e4e8] dark:border-white/10"}`}>
                   <input type="radio" name="join-mode" value="link" checked={joinMode === "link"} onChange={() => setJoinMode("link")} className="mr-2" />
                   <span className="font-bold">Anyone with the link</span>
-                  <span className="mt-1 block pl-5 text-xs text-[#718074]">Anyone with the private link can join after signing in.</span>
+                  <span className="mt-1 block pl-5 text-xs text-[#858b95]">Anyone with the private link can join after signing in.</span>
                 </label>
               </div>
             </fieldset>
@@ -773,7 +775,7 @@ export default function TogetherPage() {
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="friend@example.com"
-              className="mt-2 w-full rounded-lg border border-[#dbe5db] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
+              className="mt-2 w-full rounded-lg border border-[#e1e4e8] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
             />
             <button
               type="submit"

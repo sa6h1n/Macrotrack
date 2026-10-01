@@ -177,14 +177,14 @@ export default function ProfilePage() {
     `mt-1.5 w-full rounded-md border px-3 py-2.5 outline-none transition ${
       editable
         ? "border-[#b8cdb9] bg-white focus:ring-2 focus:ring-[#477648]/30 dark:border-white/20 dark:bg-white/5"
-        : "cursor-default border-[#dbe5db] bg-[#f3f6f3] text-[#68746a] dark:border-white/10 dark:bg-white/[0.03] dark:text-[#aebbb0]"
+        : "cursor-default border-[#e1e4e8] bg-[#f3f6f3] text-[#68746a] dark:border-white/10 dark:bg-white/[0.03] dark:text-[#aeb4bf]"
     }`;
 
   if (loading) {
     return (
       <>
         <SectionHeading eyebrow="Your settings" title="Profile" description="Targets are personal. MacroTrack does not provide medical advice." />
-        <div className="mt-7 flex items-center gap-2 text-sm text-[#708073]">
+        <div className="mt-7 flex items-center gap-2 text-sm text-[#858b95]">
           <Loader2 size={16} className="animate-spin" /> Loading profile…
         </div>
       </>
@@ -198,14 +198,14 @@ export default function ProfilePage() {
       {error && <div className="mt-5 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
       {message && <div className="mt-5 rounded-lg border border-[#b8cdb9] bg-[#edf5ed] px-4 py-3 text-sm text-[#356239]">{message}</div>}
 
-      <section className="mt-7 rounded-lg border border-[#dfe7df] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#18201a]">
+      <section className="mt-7 rounded-lg border border-[#e1e4e8] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#181b21]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-bold">About you</h2>
-            <p className="mt-1 text-sm text-[#708073] dark:text-[#aebbb0]">Your personal details.</p>
+            <p className="mt-1 text-sm text-[#858b95] dark:text-[#aeb4bf]">Your personal details.</p>
           </div>
           {!editingAbout ? (
-            <button type="button" onClick={() => { setEditingAbout(true); setMessage(null); }} className="inline-flex items-center gap-2 rounded-md border border-[#dbe5db] px-3 py-2 text-sm font-semibold hover:bg-[#f3f6f3] dark:border-white/10 dark:hover:bg-white/5">
+            <button type="button" onClick={() => { setEditingAbout(true); setMessage(null); }} className="inline-flex items-center gap-2 rounded-md border border-[#e1e4e8] px-3 py-2 text-sm font-semibold hover:bg-[#f3f6f3] dark:border-white/10 dark:hover:bg-white/5">
               <Edit3 size={15} /> Edit
             </button>
           ) : null}
@@ -219,14 +219,14 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <section className="mt-4 rounded-lg border border-[#dfe7df] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#18201a]">
+      <section className="mt-4 rounded-lg border border-[#e1e4e8] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#181b21]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-bold">Daily targets</h2>
-            <p className="mt-1 text-sm text-[#708073] dark:text-[#aebbb0]">Set the targets you want to follow.</p>
+            <p className="mt-1 text-sm text-[#858b95] dark:text-[#aeb4bf]">Set the targets you want to follow.</p>
           </div>
           {!editingTargets ? (
-            <button type="button" onClick={() => { setEditingTargets(true); setMessage(null); }} className="inline-flex items-center gap-2 rounded-md border border-[#dbe5db] px-3 py-2 text-sm font-semibold hover:bg-[#f3f6f3] dark:border-white/10 dark:hover:bg-white/5">
+            <button type="button" onClick={() => { setEditingTargets(true); setMessage(null); }} className="inline-flex items-center gap-2 rounded-md border border-[#e1e4e8] px-3 py-2 text-sm font-semibold hover:bg-[#f3f6f3] dark:border-white/10 dark:hover:bg-white/5">
               <Edit3 size={15} /> Edit
             </button>
           ) : null}
@@ -242,7 +242,7 @@ export default function ProfilePage() {
             <label key={key} className="text-sm font-semibold">{label}
               <span className="relative mt-1.5 block">
                 <input value={draft[key as keyof Profile] as number} disabled={!editingTargets} onChange={(e) => updateDraft(key as keyof Profile, numberOrNull(e.target.value) ?? 0)} inputMode="decimal" className={inputClass(editingTargets) + " pr-10"} />
-                <span className="pointer-events-none absolute right-3 top-3 text-xs text-[#708073]">{unit}</span>
+                <span className="pointer-events-none absolute right-3 top-3 text-xs text-[#858b95]">{unit}</span>
               </span>
             </label>
           ))}
@@ -257,20 +257,20 @@ export default function ProfilePage() {
         </label>
       </section>
 
-      <section className="mt-4 rounded-lg border border-[#dfe7df] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#18201a]">
+      <section className="mt-4 rounded-lg border border-[#e1e4e8] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#181b21]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2"><ShieldCheck size={19} className="text-moss-600" /><h2 className="font-bold">Group privacy</h2></div>
-            <p className="mt-1 text-sm text-[#6b796e] dark:text-[#aebbb0]">Only group members can see the items you choose to share.</p>
+            <p className="mt-1 text-sm text-[#6b796e] dark:text-[#aeb4bf]">Only group members can see the items you choose to share.</p>
           </div>
           {!editingPrivacy ? (
-            <button type="button" onClick={() => { setEditingPrivacy(true); setMessage(null); }} className="inline-flex items-center gap-2 rounded-md border border-[#dbe5db] px-3 py-2 text-sm font-semibold hover:bg-[#f3f6f3] dark:border-white/10 dark:hover:bg-white/5">
+            <button type="button" onClick={() => { setEditingPrivacy(true); setMessage(null); }} className="inline-flex items-center gap-2 rounded-md border border-[#e1e4e8] px-3 py-2 text-sm font-semibold hover:bg-[#f3f6f3] dark:border-white/10 dark:hover:bg-white/5">
               <Edit3 size={15} /> Edit
             </button>
           ) : null}
         </div>
 
-        <div className="mt-4 divide-y divide-[#edf1ed] dark:divide-white/10">
+        <div className="mt-4 divide-y divide-[#e9ebef] dark:divide-white/10">
           {[
             ["share_calories", "Share calories"],
             ["share_protein", "Share protein"],
@@ -292,8 +292,8 @@ export default function ProfilePage() {
       </section>
 
       {isEditing && (
-        <div className="sticky bottom-4 z-20 mt-6 flex items-center justify-end gap-3 rounded-lg border border-[#dfe7df] bg-white/95 p-3 shadow-lg backdrop-blur dark:border-white/10 dark:bg-[#18201a]/95">
-          <button type="button" onClick={cancelEdits} disabled={saving} className="inline-flex items-center gap-2 rounded-md border border-[#dbe5db] px-4 py-2.5 text-sm font-bold dark:border-white/10">
+        <div className="sticky bottom-4 z-20 mt-6 flex items-center justify-end gap-3 rounded-lg border border-[#e1e4e8] bg-white/95 p-3 shadow-lg backdrop-blur dark:border-white/10 dark:bg-[#181b21]/95">
+          <button type="button" onClick={cancelEdits} disabled={saving} className="inline-flex items-center gap-2 rounded-md border border-[#e1e4e8] px-4 py-2.5 text-sm font-bold dark:border-white/10">
             <X size={16} /> Cancel
           </button>
           <button type="button" onClick={saveChanges} disabled={saving} className="inline-flex items-center gap-2 rounded-md bg-moss-600 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60">

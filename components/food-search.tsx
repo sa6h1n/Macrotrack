@@ -219,12 +219,12 @@ export function FoodSearch({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-[#dbe5db] bg-[#fafcf9] py-3 pl-10 pr-3 text-sm outline-none ring-moss-500 focus:ring-2 dark:border-white/10 dark:bg-white/5"
+        className="w-full rounded-lg border border-[#e1e4e8] bg-[#f8f9fb] py-3 pl-10 pr-3 text-sm outline-none ring-moss-500 focus:ring-2 dark:border-white/10 dark:bg-white/5"
       />
       {value.trim().length >= 2 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-auto rounded-lg border border-[#dfe7df] bg-white p-1 shadow-xl dark:border-white/10 dark:bg-[#18201a]">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-auto rounded-lg border border-[#e1e4e8] bg-white p-1 shadow-xl dark:border-white/10 dark:bg-[#181b21]">
           {searching ? (
-            <p className="px-3 py-4 text-sm text-[#718074]">
+            <p className="px-3 py-4 text-sm text-[#858b95]">
               {allowExternalSearch ? "Searching your library and nutrition databases…" : "Searching your library…"}
             </p>
           ) : results.length ? (
@@ -241,25 +241,25 @@ export function FoodSearch({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{food.name}</span>
-                  <span className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] text-[#718074] dark:text-[#aebbb0]">
+                  <span className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] text-[#858b95] dark:text-[#aeb4bf]">
                     <span>{food.brand ? `${food.brand} · ` : ""}{food.measurementState.replace("_", " ")}</span>
                     <span>{food.persisted === false ? `Add from ${food.source}` : food.isGlobal ? "MacroTrack" : "My foods"}</span>
                   </span>
                 </span>
-                <span className="ml-2 shrink-0 text-right text-xs text-[#718074] dark:text-[#aebbb0]">
+                <span className="ml-2 shrink-0 text-right text-xs text-[#858b95] dark:text-[#aeb4bf]">
                   {addingId === food.id ? "Adding…" : `${Math.round(food.calories)} kcal · ${food.protein.toFixed(1)}g P`}
                 </span>
               </button>
             ))
           ) : (
             allowExternalSearch ? (
-              <p className="px-3 py-4 text-sm text-[#718074]">No matching food found in your library or nutrition sources.</p>
+              <p className="px-3 py-4 text-sm text-[#858b95]">No matching food found in your library or nutrition sources.</p>
             ) : (
               <div className="px-3 py-4">
                 <p className="text-sm font-semibold text-[#344238] dark:text-[#dce7dd]">
                   Food not found in your library
                 </p>
-                <p className="mt-1 text-xs leading-5 text-[#718074] dark:text-[#aebbb0]">
+                <p className="mt-1 text-xs leading-5 text-[#858b95] dark:text-[#aeb4bf]">
                   Go to Foods → Add Custom Food to search external food databases.
                 </p>
                 <Link
@@ -272,7 +272,7 @@ export function FoodSearch({
               </div>
             )
           )}
-          {error && <p className="border-t border-[#edf1ed] px-3 py-3 text-xs font-semibold text-coral-600 dark:border-white/10">{error}</p>}
+          {error && <p className="border-t border-[#e9ebef] px-3 py-3 text-xs font-semibold text-coral-600 dark:border-white/10">{error}</p>}
         </div>
       )}
     </div>

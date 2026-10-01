@@ -193,7 +193,7 @@ export default function FoodsPage() {
           onSelect={onFoodSelected}
           placeholder="Search chicken, bread, rice, branded foods..."
         />
-        <p className="mt-2 text-xs text-[#718074] dark:text-[#aebbb0]">
+        <p className="mt-2 text-xs text-[#858b95] dark:text-[#aeb4bf]">
           External results from USDA and Open Food Facts can be saved to your private library.
         </p>
       </div>
@@ -202,7 +202,7 @@ export default function FoodsPage() {
         <div className="mt-7">
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-[#718074] dark:text-[#aebbb0]">Browse by category</p>
+              <p className="text-sm font-bold text-[#858b95] dark:text-[#aeb4bf]">Browse by category</p>
               <p className="mt-1 text-xs text-[#8a968c]">Quick collections based on nutrition and food type.</p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function FoodsPage() {
                   key={item.id}
                   type="button"
                   onClick={() => setCategory(item.id)}
-                  className="group rounded-xl border border-[#dfe7df] bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#18201a]"
+                  className="group rounded-xl border border-[#e1e4e8] bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#181b21]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="grid size-11 place-items-center rounded-lg bg-moss-50 text-moss-700 dark:bg-moss-500/15 dark:text-moss-100">
@@ -223,7 +223,7 @@ export default function FoodsPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-bold">{item.title}</p>
-                      <p className="mt-1 text-xs text-[#718074] dark:text-[#aebbb0]">{item.subtitle}</p>
+                      <p className="mt-1 text-xs text-[#858b95] dark:text-[#aeb4bf]">{item.subtitle}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold">{item.count}</p>
@@ -237,7 +237,7 @@ export default function FoodsPage() {
             <button
               type="button"
               onClick={() => setCategory("favorites")}
-              className="group rounded-xl border border-[#dfe7df] bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#18201a]"
+              className="group rounded-xl border border-[#e1e4e8] bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#181b21]"
             >
               <div className="flex items-center gap-3">
                 <div className="grid size-11 place-items-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-200">
@@ -245,7 +245,7 @@ export default function FoodsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-bold">Favorites</p>
-                  <p className="mt-1 text-xs text-[#718074] dark:text-[#aebbb0]">Your personal go-to foods</p>
+                  <p className="mt-1 text-xs text-[#858b95] dark:text-[#aeb4bf]">Your personal go-to foods</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold">{favorites.size}</p>
@@ -257,7 +257,7 @@ export default function FoodsPage() {
             <button
               type="button"
               onClick={() => setCategory("indian")}
-              className="group rounded-xl border border-[#dfe7df] bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#18201a]"
+              className="group rounded-xl border border-[#e1e4e8] bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#181b21]"
             >
               <div className="flex items-center gap-3">
                 <div className="grid size-11 place-items-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-200">
@@ -265,7 +265,7 @@ export default function FoodsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-bold">Indian & Kerala</p>
-                  <p className="mt-1 text-xs text-[#718074] dark:text-[#aebbb0]">Everyday Indian & Kerala foods</p>
+                  <p className="mt-1 text-xs text-[#858b95] dark:text-[#aeb4bf]">Everyday Indian & Kerala foods</p>
                 </div>
                 <ChevronRight size={16} className="text-[#8a968c]" />
               </div>
@@ -283,7 +283,7 @@ export default function FoodsPage() {
             className={`rounded-md px-3 py-2 text-sm font-bold capitalize ${
               category === item
                 ? "bg-moss-600 text-white"
-                : "bg-white text-[#657469] ring-1 ring-[#dce5dc] dark:bg-[#18201a] dark:text-[#aebbb0] dark:ring-white/10"
+                : "bg-white text-[#6b707a] ring-1 ring-[#e1e4e8] dark:bg-[#181b21] dark:text-[#aeb4bf] dark:ring-white/10"
             }`}
           >
             {item === "all" ? "All foods" : item === "indian" ? "Indian & Kerala" : item}
@@ -291,13 +291,13 @@ export default function FoodsPage() {
         ))}
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-xl border border-[#dfe7df] bg-white shadow-sm dark:border-white/10 dark:bg-[#18201a]">
+      <div className="mt-4 overflow-hidden rounded-xl border border-[#e1e4e8] bg-white shadow-sm dark:border-white/10 dark:bg-[#181b21]">
         {loading || favoritesLoading ? (
-          <div className="px-4 py-12 text-center text-sm text-[#718074]">Loading foods…</div>
+          <div className="px-4 py-12 text-center text-sm text-[#858b95]">Loading foods…</div>
         ) : filtered.map((food) => {
           const isFavorite = favorites.has(food.id);
           return (
-            <div key={food.id} className="flex items-center gap-3 border-b border-[#edf1ed] px-4 py-4 last:border-0 dark:border-white/10">
+            <div key={food.id} className="flex items-center gap-3 border-b border-[#e9ebef] px-4 py-4 last:border-0 dark:border-white/10">
               <div className="grid size-10 shrink-0 place-items-center rounded-md bg-moss-50 font-bold text-moss-700 dark:bg-moss-500/15 dark:text-moss-100">
                 {food.name[0]}
               </div>
@@ -308,13 +308,13 @@ export default function FoodsPage() {
                     {food.measurementState.replace("_", " ")}
                   </span>
                 </p>
-                <p className="mt-1 text-xs text-[#708073] dark:text-[#aebbb0]">
+                <p className="mt-1 text-xs text-[#858b95] dark:text-[#aeb4bf]">
                   {food.brand ? `${food.brand} · ` : ""}{food.source}
                 </p>
               </div>
               <div className="hidden text-right sm:block">
                 <p className="font-bold">{food.calories} kcal</p>
-                <p className="mt-1 text-xs text-[#708073] dark:text-[#aebbb0]">{food.protein}g protein / 100g</p>
+                <p className="mt-1 text-xs text-[#858b95] dark:text-[#aeb4bf]">{food.protein}g protein / 100g</p>
               </div>
               <button
                 type="button"
@@ -324,7 +324,7 @@ export default function FoodsPage() {
                 className={`grid size-9 shrink-0 place-items-center rounded-full transition ${
                   isFavorite
                     ? "bg-amber-50 text-amber-500 dark:bg-amber-500/15 dark:text-amber-300"
-                    : "bg-[#f4f7f4] text-[#819087] hover:text-amber-500 dark:bg-white/5 dark:text-[#aebbb0]"
+                    : "bg-[#f4f7f4] text-[#819087] hover:text-amber-500 dark:bg-white/5 dark:text-[#aeb4bf]"
                 }`}
               >
                 <Star size={17} fill={isFavorite ? "currentColor" : "none"} />
@@ -333,7 +333,7 @@ export default function FoodsPage() {
           );
         })}
         {!loading && !favoritesLoading && !filtered.length && (
-          <div className="px-4 py-12 text-center text-sm text-[#718074]">
+          <div className="px-4 py-12 text-center text-sm text-[#858b95]">
             {category === "favorites"
               ? "You haven't favorited any foods yet. Tap the star beside a food to add it here."
               : "No foods match this category or search."}

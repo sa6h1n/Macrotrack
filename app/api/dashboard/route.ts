@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     const from = date ? `${date}T00:00:00` : new Date().toISOString().slice(0, 10) + "T00:00:00";
     const to = date ? `${date}T23:59:59.999` : new Date().toISOString().slice(0, 10) + "T23:59:59.999";
     const [{ data: profile, error: profileError }, { data: logs, error: logsError }] = await Promise.all([
-      supabase.from("profiles").select("name, email, calorie_target, protein_target, carb_target, fat_target").eq("user_id", user.id).single(),
+      supabase.from("profiles").select("user_id, name, email, member_id, avatar, calorie_target, protein_target, carb_target, fat_target").eq("user_id", user.id).single(),
       supabase.from("food_logs").select("id, food_id, recipe_id, meal, quantity_grams, measurement_state, calories, protein, carbs, fat, fiber, logged_at, foods(name), recipes(name)").gte("logged_at", from).lte("logged_at", to).order("logged_at")
     ]);
     if (profileError || logsError) return NextResponse.json({ message: "Unable to load your dashboard." }, { status: 500 });

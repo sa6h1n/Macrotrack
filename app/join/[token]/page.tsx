@@ -51,16 +51,16 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
   }
 
   if (loading) {
-    return <main className="grid min-h-screen place-items-center bg-[#f7faf6] p-6 dark:bg-[#101612]"><p className="font-semibold text-[#718074]">Loading group…</p></main>;
+    return <main className="grid min-h-screen place-items-center bg-[#f7faf6] p-6 dark:bg-[#0b0d10]"><p className="font-semibold text-[#858b95]">Loading group…</p></main>;
   }
 
   if (!group) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f7faf6] p-6 dark:bg-[#101612]">
-        <section className="w-full max-w-md rounded-2xl border border-[#dfe7df] bg-white p-7 shadow-xl dark:border-white/10 dark:bg-[#18201a]">
+      <main className="grid min-h-screen place-items-center bg-[#f7faf6] p-6 dark:bg-[#0b0d10]">
+        <section className="w-full max-w-md rounded-2xl border border-[#e1e4e8] bg-white p-7 shadow-xl dark:border-white/10 dark:bg-[#181b21]">
           <div className="grid size-12 place-items-center rounded-xl bg-moss-600 text-white"><Link2 size={22} /></div>
           <h1 className="mt-5 text-2xl font-black">This join link is unavailable</h1>
-          <p className="mt-2 text-sm text-[#718074]">It may be invalid, expired, or the group owner may have regenerated the link.</p>
+          <p className="mt-2 text-sm text-[#858b95]">It may be invalid, expired, or the group owner may have regenerated the link.</p>
           <Link href="/" className="mt-5 inline-flex rounded-lg bg-moss-600 px-4 py-3 text-sm font-bold text-white">Open MacroTrack</Link>
         </section>
       </main>
@@ -68,12 +68,12 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[#f7faf6] p-6 dark:bg-[#101612]">
-      <section className="w-full max-w-md rounded-2xl border border-[#dfe7df] bg-white p-7 shadow-xl dark:border-white/10 dark:bg-[#18201a]">
+    <main className="grid min-h-screen place-items-center bg-[#f7faf6] p-6 dark:bg-[#0b0d10]">
+      <section className="w-full max-w-md rounded-2xl border border-[#e1e4e8] bg-white p-7 shadow-xl dark:border-white/10 dark:bg-[#181b21]">
         <div className="grid size-12 place-items-center rounded-xl bg-moss-600 text-white"><UsersRound size={22} /></div>
         <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-moss-700 dark:text-moss-300">You&apos;re invited to track together</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight">{group.name}</h1>
-        <p className="mt-2 text-sm text-[#718074]">{group.member_count} {group.member_count === 1 ? "member" : "members"}. Your nutrition targets and details stay private according to your sharing settings.</p>
+        <p className="mt-2 text-sm text-[#858b95]">{group.member_count} {group.member_count === 1 ? "member" : "members"}. Your nutrition targets and details stay private according to your sharing settings.</p>
         {message && <p className="mt-5 rounded-lg bg-moss-50 px-3 py-3 text-sm font-semibold text-moss-800 dark:bg-moss-500/10 dark:text-moss-100">{message}</p>}
         {error && <p className="mt-5 rounded-lg bg-red-500/10 px-3 py-3 text-sm font-semibold text-red-700 dark:text-red-200">{error}</p>}
         {signedIn ? (
@@ -86,7 +86,7 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
             <Link href={`/signup?next=${encodeURIComponent(`/join/${token}`)}`} className="w-full rounded-lg border px-4 py-3.5 text-center font-bold">Create an account</Link>
           </div>
         )}
-        <p className="mt-5 text-center text-xs text-[#718074]">MacroTrack · private nutrition tracking</p>
+        <p className="mt-5 text-center text-xs text-[#858b95]">MacroTrack · private nutrition tracking</p>
       </section>
     </main>
   );
