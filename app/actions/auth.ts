@@ -39,7 +39,15 @@ export async function signOut() {
 export async function requestPasswordReset(formData: FormData) {
   const email = String(formData.get("email") || "");
   const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/update-password` });
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "https://macrotrack-8fqderba0-macrotrack1.vercel.app";
+
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/update-password`,
+  });
+
   redirect("/forgot-password?message=If an account exists, a reset link has been sent.");
 }
 
