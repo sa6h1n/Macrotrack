@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus, Trash2, X, ClipboardList } from "lucide-react";
 import { calculateGoalProgress, calculateNutrition, sumNutrition } from "@/lib/nutrition/calculations";
@@ -51,7 +51,7 @@ function ProgressRing({ label, value, target, unit, hue }: { label: string; valu
   return <div className="flex items-center gap-3"><div className="grid size-[66px] shrink-0 place-items-center rounded-full" style={{ background: `conic-gradient(${hue} ${progress * 3.6}deg, #e8eee8 0deg)` }}><div className="grid size-[54px] place-items-center rounded-full bg-white text-[11px] font-bold dark:bg-[#18201a]">{progress}%</div></div><div><p className="text-sm font-semibold">{label}</p><p className="mt-1 text-sm text-[#6d7c70] dark:text-[#aebbb0]"><span className="font-bold text-ink dark:text-white">{formatNumber(value, 1)}</span> / {formatNumber(target)} {unit}</p></div></div>;
 }
 
-export function Dashboard() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const requestedDate = searchParams.get("date");
   const dashboardDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate ?? "") ? requestedDate! : localDate();
@@ -67,6 +67,7 @@ export function Dashboard() {
   const date = new Intl.DateTimeFormat("en-IN", { weekday: "long", month: "long", day: "numeric" }).format(displayDate);
   const isToday = dashboardDate === localDate();
 
+  
   async function loadDashboard() {
     setLoading(true);
     setLoadError(null);
@@ -93,6 +94,7 @@ export function Dashboard() {
       setLoading(false);
     }
   }
+  
 
   useEffect(() => { void loadDashboard(); }, [dashboardDate]);
 
@@ -161,6 +163,14 @@ export function Dashboard() {
   </>;
 }
 
+export function Dashboard() {
+  return (
+    <Suspense fallback={<div className="grid min-h-[60vh] place-items-center text-sm font-semibold text-[#718074]">Loading your day…</div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
 function MealCard({ meal, logs, onAdd, onDelete }: { meal: Meal; logs: FoodLog[]; onAdd: () => void; onDelete: (id: string) => void }) {
   const totals = sumNutrition(logs);
   return <article className="rounded-lg border border-[#dfe7df] bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#18201a]"><div className="flex items-center justify-between"><div><h3 className="font-bold">{MEAL_LABELS[meal]}</h3><p className="mt-0.5 text-xs text-[#6d7c70] dark:text-[#aebbb0]">{formatNumber(totals.calories)} kcal {logs.length ? `- ${formatNumber(totals.protein, 1)}g protein` : ""}</p></div><button onClick={onAdd} className="rounded-md px-2.5 py-2 text-xs font-bold text-moss-700 hover:bg-moss-50 dark:text-moss-100 dark:hover:bg-white/5">+ Add</button></div>{logs.length ? <div className="mt-3 divide-y divide-[#edf1ed] dark:divide-white/10">{logs.map((log) => <div key={log.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"><div className="grid size-9 shrink-0 place-items-center rounded-md bg-moss-50 text-sm font-bold text-moss-700 dark:bg-moss-500/15 dark:text-moss-100">{log.foodName.charAt(0)}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{log.foodName}</p><p className="mt-0.5 text-xs uppercase tracking-wide text-[#78877b]">{log.quantityGrams}g · {log.measurementState.replace("_", " ")}</p></div><div className="text-right"><p className="text-sm font-bold">{formatNumber(log.calories)} kcal</p><p className="text-xs text-[#6d7c70] dark:text-[#aebbb0]">P {formatNumber(log.protein, 1)} · C {formatNumber(log.carbs, 1)} · F {formatNumber(log.fat, 1)}</p></div><button onClick={() => onDelete(log.id)} className="ml-1 grid size-8 place-items-center rounded-md text-[#9aa79c] hover:bg-coral-50 hover:text-coral-500" aria-label={`Remove ${log.foodName}`}><Trash2 size={16}/></button></div>)}</div> : <button onClick={onAdd} className="mt-3 w-full rounded-md border border-dashed border-[#d9e3d9] py-3 text-sm font-semibold text-[#718174] hover:border-moss-500 hover:text-moss-700 dark:border-white/15 dark:text-[#aebbb0]">No meals logged yet</button>}</article>;
@@ -207,11 +217,17 @@ function AddFoodDialog({ initialMeal, onClose, onSave }: { initialMeal: Meal | n
                 source: food.source ?? "custom",
                 foodType: food.food_type ?? food.foodType ?? "generic",
                 measurementState: item.measurement_state ?? food.measurement_state ?? food.measurementState ?? "as_served",
-                caloriesPer100g: Number(food.calories_per_100g ?? food.caloriesPer100g ?? 0),
-                proteinPer100g: Number(food.protein_per_100g ?? food.proteinPer100g ?? 0),
-                carbsPer100g: Number(food.carbs_per_100g ?? food.carbsPer100g ?? 0),
-                fatPer100g: Number(food.fat_per_100g ?? food.fatPer100g ?? 0),
-                fiberPer100g: Number(food.fiber_per_100g ?? food.fiberPer100g ?? 0),
+                calories: Number(food.calories_per_100g ?? food.caloriesPer100g ?? 0),
+protein: Number(food.protein_per_100g ?? food.proteinPer100g ?? 0),
+carbs: Number(food.carbs_per_100g ?? food.carbsPer100g ?? 0),
+fat: Number(food.fat_per_100g ?? food.fatPer100g ?? 0),
+fiber: Number(food.fiber_per_100g ?? food.fiberPer100g ?? 0),
+
+caloriesPer100g: Number(food.calories_per_100g ?? food.caloriesPer100g ?? 0),
+proteinPer100g: Number(food.protein_per_100g ?? food.proteinPer100g ?? 0),
+carbsPer100g: Number(food.carbs_per_100g ?? food.carbsPer100g ?? 0),
+fatPer100g: Number(food.fat_per_100g ?? food.fatPer100g ?? 0),
+fiberPer100g: Number(food.fiber_per_100g ?? food.fiberPer100g ?? 0),
               } as Food,
               grams: Number(item.quantity_grams),
             };
