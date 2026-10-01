@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Link2, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function JoinGroupPage({ params }: { params: Promise<{ token: string }> }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [token, setToken] = useState("");
   const [group, setGroup] = useState<{ id: string; name: string; member_count: number } | null>(null);
   const [signedIn, setSignedIn] = useState(false);
@@ -46,8 +48,20 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
       return;
     }
     const joined = data?.[0];
-    setMessage(`You're in ${joined?.group_name ?? group?.name ?? "the group"}.`);
-    setGroup((current) => current ? { ...current, member_count: current.member_count + 1 } : current);
+    const groupName = joined?.group_name ?? group?.name ?? "the group";
+
+setMessage(`You're in ${groupName}.`);
+
+setGroup((current) =>
+  current
+    ? { ...current, member_count: current.member_count + 1 }
+    : current,
+);
+
+setTimeout(() => {
+  router.push("/app/together");
+  router.refresh();
+}, 800);
   }
 
   if (loading) {

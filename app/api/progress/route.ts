@@ -22,20 +22,36 @@ export async function GET() {
       );
     }
 
-    const { data, error } = await supabase
-      .from("weight_logs")
-      .select("id, weight_kg, logged_at")
-      .eq("user_id", user.id)
-      .order("logged_at", { ascending: true });
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    if (error) {
+    const [weightResult, foodResult] = await Promise.all([
+      supabase
+        .from("weight_logs")
+        .select("id, weight_kg, logged_at")
+        .eq("user_id", user.id)
+        .gte("logged_at", ninetyDaysAgo.toISOString())
+        .order("logged_at", { ascending: true }),
+
+      supabase
+        .from("food_logs")
+        .select("id, calories, protein, logged_at")
+        .eq("user_id", user.id)
+        .gte("logged_at", ninetyDaysAgo.toISOString())
+        .order("logged_at", { ascending: true }),
+    ]);
+
+    if (weightResult.error || foodResult.error) {
       return NextResponse.json(
-        { message: "Unable to load weight history." },
+        { message: "Unable to load progress history." },
         { status: 500 },
       );
     }
 
-    return NextResponse.json({ weights: data ?? [] });
+    return NextResponse.json({
+      weights: weightResult.data ?? [],
+      foodLogs: foodResult.data ?? [],
+    });
   } catch {
     return NextResponse.json(
       { message: "Unable to load progress data." },

@@ -18,10 +18,17 @@ type WeightLog = {
   logged_at: string;
 };
 
-type ProgressPoint = {
-  day: string;
+type FoodLog = {
+  id: string;
   calories: number;
   protein: number;
+  logged_at: string;
+};
+
+type ProgressPoint = {
+  date: string;
+  calories: number | null;
+  protein: number | null;
   weight: number | null;
 };
 
@@ -31,19 +38,22 @@ const ranges = [
   { label: "90 days", count: 90 },
 ];
 
-const demoData: ProgressPoint[] = Array.from(
-  { length: 90 },
-  (_, index) => {
-    const day = index + 1;
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
-    return {
-      day: `Day ${day}`,
-      calories: 1700 + ((index * 137) % 650),
-      protein: 92 + ((index * 17) % 45),
-      weight: null,
-    };
-  },
-);
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateLabel(value: string) {
+  const date = new Date(`${value}T12:00:00`);
+
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+}
 
 function ChartPanel({
   label,
@@ -72,7 +82,7 @@ function ChartPanel({
           style={{ color }}
         >
           {latest !== null && latest !== undefined
-            ? `${latest} ${unit}`
+            ? `${Number(latest).toFixed(dataKey === "weight" ? 1 : 0)} ${unit}`
             : "No data"}
         </p>
       </div>
@@ -116,7 +126,7 @@ function ChartPanel({
             />
 
             <XAxis
-              dataKey="day"
+              dataKey="date"
               tickLine={false}
               axisLine={false}
               tick={{
@@ -124,6 +134,7 @@ function ChartPanel({
                 fill: "#858b95",
               }}
               minTickGap={26}
+              tickFormatter={formatDateLabel}
             />
 
             <YAxis
@@ -136,6 +147,13 @@ function ChartPanel({
             />
 
             <Tooltip
+              labelFormatter={(value) => formatDateLabel(String(value))}
+              formatter={(value) => [
+                value === null || value === undefined
+                  ? "No data"
+                  : `${Number(value).toFixed(dataKey === "weight" ? 1 : 0)} ${unit}`,
+                label,
+              ]}
               contentStyle={{
                 borderRadius: 8,
                 borderColor: "#e1e4e8",
@@ -161,6 +179,7 @@ function ChartPanel({
 export function ProgressCharts() {
   const [days, setDays] = useState(30);
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
+  const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [weightOpen, setWeightOpen] = useState(false);
   const [weight, setWeight] = useState("");
   const [saving, setSaving] = useState(false);
@@ -168,7 +187,7 @@ export function ProgressCharts() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    async function loadWeights() {
+    async function loadProgress() {
       try {
         const response = await fetch("/api/progress");
 
@@ -177,15 +196,17 @@ export function ProgressCharts() {
         }
 
         const data = await response.json();
+
         setWeightLogs(data.weights ?? []);
+        setFoodLogs(data.foodLogs ?? []);
       } catch {
-        setMessage("Unable to load weight history.");
+        setMessage("Unable to load progress history.");
       } finally {
         setLoading(false);
       }
     }
 
-    void loadWeights();
+    void loadProgress();
   }, []);
 
   const latestWeight =
@@ -204,17 +225,103 @@ export function ProgressCharts() {
       : null;
 
   const chartData = useMemo(() => {
-    const source = demoData.slice(-days);
+    const today = new Date();
 
-    const logs = weightLogs.slice(-days);
+    const dates: string[] = [];
 
-    return source.map((point, index) => ({
-      ...point,
-      weight: logs[index]
-        ? Number(logs[index].weight_kg)
+    for (let index = days - 1; index >= 0; index -= 1) {
+      const date = new Date(today);
+      date.setHours(12, 0, 0, 0);
+      date.setDate(today.getDate() - index);
+
+      dates.push(dateKey(date));
+    }
+
+    const caloriesByDate = new Map<string, number>();
+    const proteinByDate = new Map<string, number>();
+
+    for (const log of foodLogs) {
+      const key = dateKey(new Date(log.logged_at));
+
+      caloriesByDate.set(
+        key,
+        (caloriesByDate.get(key) ?? 0) + Number(log.calories ?? 0),
+      );
+
+      proteinByDate.set(
+        key,
+        (proteinByDate.get(key) ?? 0) + Number(log.protein ?? 0),
+      );
+    }
+
+    const weightByDate = new Map<string, number>();
+
+    for (const log of weightLogs) {
+      const key = dateKey(new Date(log.logged_at));
+
+      weightByDate.set(
+        key,
+        Number(log.weight_kg),
+      );
+    }
+
+    return dates.map((date) => ({
+      date,
+      calories: caloriesByDate.has(date)
+        ? Math.round(caloriesByDate.get(date) ?? 0)
+        : null,
+      protein: proteinByDate.has(date)
+        ? Math.round(proteinByDate.get(date) ?? 0)
+        : null,
+      weight: weightByDate.has(date)
+        ? weightByDate.get(date) ?? null
         : null,
     }));
-  }, [days, weightLogs]);
+  }, [days, foodLogs, weightLogs]);
+
+  const sevenDayTrend = useMemo(() => {
+    if (weightLogs.length < 2) {
+      return null;
+    }
+
+    const latest = weightLogs[weightLogs.length - 1];
+    const latestDate = new Date(latest.logged_at);
+
+    const cutoff = new Date(latestDate);
+    cutoff.setDate(cutoff.getDate() - 7);
+
+    const previous = [...weightLogs]
+      .reverse()
+      .find((log) => new Date(log.logged_at) <= cutoff);
+
+    if (!previous) {
+      return null;
+    }
+
+    return Number(latest.weight_kg) - Number(previous.weight_kg);
+  }, [weightLogs]);
+
+  const thirtyDayTrend = useMemo(() => {
+    if (weightLogs.length < 2) {
+      return null;
+    }
+
+    const latest = weightLogs[weightLogs.length - 1];
+    const latestDate = new Date(latest.logged_at);
+
+    const cutoff = new Date(latestDate);
+    cutoff.setDate(cutoff.getDate() - 30);
+
+    const previous = [...weightLogs]
+      .reverse()
+      .find((log) => new Date(log.logged_at) <= cutoff);
+
+    if (!previous) {
+      return null;
+    }
+
+    return Number(latest.weight_kg) - Number(previous.weight_kg);
+  }, [weightLogs]);
 
   async function saveWeight() {
     const parsedWeight = Number(weight);
@@ -244,7 +351,14 @@ export function ProgressCharts() {
         throw new Error(data.message);
       }
 
-      setWeightLogs((current) => [...current, data]);
+      setWeightLogs((current) =>
+        [...current, data].sort(
+          (a, b) =>
+            new Date(a.logged_at).getTime() -
+            new Date(b.logged_at).getTime(),
+        ),
+      );
+
       setWeight("");
       setWeightOpen(false);
       setMessage("Weight saved.");
@@ -266,6 +380,7 @@ export function ProgressCharts() {
             {ranges.map((range) => (
               <button
                 key={range.count}
+                type="button"
                 onClick={() => setDays(range.count)}
                 className={`rounded-md px-3 py-2 text-xs font-bold ${
                   days === range.count
@@ -338,11 +453,8 @@ export function ProgressCharts() {
 
             <p>
               <span className="block text-lg font-bold">
-                {weightLogs.length >= 2
-                  ? (
-                      latestWeight! -
-                      Number(weightLogs[Math.max(0, weightLogs.length - 8)].weight_kg)
-                    ).toFixed(1)
+                {sevenDayTrend !== null
+                  ? `${sevenDayTrend >= 0 ? "+" : ""}${sevenDayTrend.toFixed(1)}`
                   : "—"}
               </span>
 
@@ -353,15 +465,8 @@ export function ProgressCharts() {
 
             <p>
               <span className="block text-lg font-bold">
-                {weightLogs.length >= 2
-                  ? (
-                      latestWeight! -
-                      Number(
-                        weightLogs[
-                          Math.max(0, weightLogs.length - 31)
-                        ].weight_kg,
-                      )
-                    ).toFixed(1)
+                {thirtyDayTrend !== null
+                  ? `${thirtyDayTrend >= 0 ? "+" : ""}${thirtyDayTrend.toFixed(1)}`
                   : "—"}
               </span>
 
