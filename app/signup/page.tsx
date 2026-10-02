@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { signUp } from "@/app/actions/auth";
 import { AuthCard } from "@/components/auth-card";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function SignupPage({
   searchParams,
@@ -84,12 +85,12 @@ export default async function SignupPage({
           />
         </label>
 
-        <button
-          type="submit"
+        <SubmitButton
+          pendingText="Creating account…"
           className="w-full rounded-lg bg-moss-600 px-4 py-3.5 text-sm font-bold text-white"
         >
           Create account
-        </button>
+        </SubmitButton>
       </form>
     </AuthCard>
   );

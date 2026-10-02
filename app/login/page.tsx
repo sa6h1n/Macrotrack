@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { signIn } from "@/app/actions/auth";
 import { AuthCard } from "@/components/auth-card";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function LoginPage({
   searchParams,
@@ -51,9 +52,7 @@ export default async function LoginPage({
             {isJoinLink &&
               message.includes("Unable to sign in") && (
                 <Link
-                  href={`/signup?next=${encodeURIComponent(
-                    safeNext
-                  )}`}
+                  href={`/signup?next=${encodeURIComponent(safeNext)}`}
                   className="mt-2 inline-block font-bold underline"
                 >
                   Don&apos;t have an account? Create one
@@ -93,12 +92,12 @@ export default async function LoginPage({
           </Link>
         </div>
 
-        <button
-          type="submit"
+        <SubmitButton
+          pendingText="Logging in…"
           className="w-full rounded-lg bg-moss-600 px-4 py-3.5 text-sm font-bold text-white"
         >
           Log in
-        </button>
+        </SubmitButton>
       </form>
     </AuthCard>
   );
