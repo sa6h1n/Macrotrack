@@ -67,6 +67,14 @@ function DashboardContent() {
   const displayDate = new Date(`${dashboardDate}T12:00:00`);
   const date = new Intl.DateTimeFormat("en-IN", { weekday: "long", month: "long", day: "numeric" }).format(displayDate);
   const isToday = dashboardDate === localDate();
+  const currentHour = new Date().getHours();
+
+const greeting =
+  currentHour < 12
+    ? "Good morning"
+    : currentHour < 17
+      ? "Good afternoon"
+      : "Good evening";
 
   
   async function loadDashboard() {
@@ -162,7 +170,7 @@ function DashboardContent() {
     </p>
 
     <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
-      Good morning, {profile.name}.
+      {greeting}, {profile.name}.
     </h1>
   </div>
 

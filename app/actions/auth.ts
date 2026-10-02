@@ -94,6 +94,14 @@ export async function requestPasswordReset(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password") || "");
 
+  if (password.length < 8) {
+    redirect(
+      `/update-password?message=${encodeURIComponent(
+        "Password must be at least 8 characters."
+      )}`
+    );
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.updateUser({
@@ -103,10 +111,15 @@ export async function updatePassword(formData: FormData) {
   if (error) {
     redirect(
       `/update-password?message=${encodeURIComponent(
-        "Unable to update password. Request another reset link."
+        "Unable to update password. Please request a new reset link."
       )}`
     );
   }
 
-  redirect("/app");
+  // Password was successfully changed.
+  redirect(
+    `/login?message=${encodeURIComponent(
+      "Password updated successfully. You can now log in with your new password."
+    )}`
+  );
 }
