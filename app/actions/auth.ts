@@ -4,11 +4,15 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://macrotrack-ashy.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  "https://macrotrack-ashy.vercel.app";
 
 function getSafeNext(value: FormDataEntryValue | null) {
   const next = String(value || "/app");
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/app";
+
+  return next.startsWith("/") && !next.startsWith("//")
+    ? next
+    : "/app";
 }
 
 export async function signIn(formData: FormData) {
@@ -31,6 +35,8 @@ export async function signIn(formData: FormData) {
     );
   }
 
+  // Normal login -> /app
+  // Invite login -> /join/<token>
   redirect(safeNext);
 }
 
@@ -58,6 +64,7 @@ export async function signUp(formData: FormData) {
     );
   }
 
+  // If email confirmation is enabled, there may be no session yet.
   if (!data.session) {
     redirect(
       `/login?message=${encodeURIComponent(
@@ -66,6 +73,8 @@ export async function signUp(formData: FormData) {
     );
   }
 
+  // Normal signup -> /app
+  // Invite signup -> /join/<token>
   redirect(safeNext);
 }
 
@@ -116,7 +125,6 @@ export async function updatePassword(formData: FormData) {
     );
   }
 
-  // Password was successfully changed.
   redirect(
     `/login?message=${encodeURIComponent(
       "Password updated successfully. You can now log in with your new password."
