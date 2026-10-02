@@ -73,42 +73,30 @@ export default function JoinGroupPage({
     setError("");
     setMessage("");
 
-    const { data, error: joinError } = await supabase.rpc(
-      "join_group_by_link",
-      {
+    const { data, error: joinError } =
+      await supabase.rpc("join_group_by_link", {
         join_token_input: token,
-      },
-    );
-
-    setJoining(false);
+      });
 
     if (joinError) {
+      setJoining(false);
       setError(joinError.message);
       return;
     }
 
-    const joined = data?.[0];
+    const joinedGroup = data?.[0];
 
     const groupName =
-      joined?.group_name ??
+      joinedGroup?.result_group_name ??
       group?.name ??
       "the group";
 
     setMessage(`You're in ${groupName}.`);
+    setJoining(false);
 
-    setGroup((current) =>
-      current
-        ? {
-            ...current,
-            member_count: current.member_count + 1,
-          }
-        : current,
-    );
-
-    // Redirect to Together after the join succeeds.
-    setTimeout(() => {
-      window.location.assign("/app/together");
-    }, 800);
+    // Whether newly joined or already a member,
+    // go straight to Together.
+    window.location.assign("/app/together");
   }
 
   if (loading) {
@@ -134,8 +122,8 @@ export default function JoinGroupPage({
           </h1>
 
           <p className="mt-2 text-sm text-[#858b95]">
-            It may be invalid, expired, or the group owner may have
-            regenerated the link.
+            It may be invalid, expired, or the group owner may
+            have regenerated the link.
           </p>
 
           <Link
@@ -166,35 +154,38 @@ export default function JoinGroupPage({
 
         <p className="mt-2 text-sm text-[#858b95]">
           {group.member_count}{" "}
-          {group.member_count === 1 ? "member" : "members"}.
-          Your nutrition targets and details stay private according
-          to your sharing settings.
+          {group.member_count === 1
+            ? "member"
+            : "members"}
+          . Your nutrition targets and details stay private
+          according to your sharing settings.
         </p>
 
+        {/* SUCCESS MESSAGE */}
         {message && (
-          <p className="mt-5 rounded-lg bg-moss-50 px-3 py-3 text-sm font-semibold text-moss-800 dark:bg-moss-500/10 dark:text-moss-100">
-            {message}
-          </p>
+          <div className="mt-5 rounded-xl bg-moss-50 p-4 dark:bg-moss-500/10">
+            <p className="text-sm font-bold text-moss-800 dark:text-moss-100">
+              ✓ {message}
+            </p>
+          </div>
         )}
 
+        {/* ERROR */}
         {error && (
           <p className="mt-5 rounded-lg bg-red-500/10 px-3 py-3 text-sm font-semibold text-red-700 dark:text-red-200">
             {error}
           </p>
         )}
 
+        {/* SIGNED IN */}
         {signedIn ? (
           <button
             type="button"
             onClick={() => void join()}
-            disabled={joining || Boolean(message)}
-            className="mt-6 w-full rounded-lg bg-moss-600 px-4 py-3.5 font-bold text-white disabled:opacity-50"
+            disabled={joining}
+            className="mt-6 w-full rounded-lg bg-moss-600 px-4 py-3.5 font-bold text-white transition hover:bg-moss-700 disabled:opacity-50"
           >
-            {joining
-              ? "Joining…"
-              : message
-                ? "Joined group"
-                : "Join group"}
+            {joining ? "Joining…" : "Join group"}
           </button>
         ) : (
           <div className="mt-6 grid gap-2">

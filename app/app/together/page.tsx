@@ -4,36 +4,36 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Check,
-  Flame,
-  Plus,
-  Shield,
-  Link2,
+  ChevronDown,
   Copy,
-  RefreshCw,
   MoreHorizontal,
   Pencil,
+  Plus,
+  RefreshCw,
   Trash2,
   Trophy,
   UserPlus,
   UsersRound,
   X,
 } from "lucide-react";
-import { SectionHeading } from "@/components/section-heading";
 import { createClient } from "@/lib/supabase/client";
-import { calculateGoalProgress } from "@/lib/nutrition/calculations";
 
 type Member = {
   user_id: string;
   name: string;
+
   calorie_target: number | null;
   protein_target: number | null;
   carb_target: number | null;
   fat_target: number | null;
+
   calories: number | null;
   protein: number | null;
   carbs: number | null;
   fat: number | null;
+
   weight_kg: number | null;
+
   meal_details: Array<{
     name: string;
     meal: string;
@@ -47,7 +47,7 @@ type Member = {
 
 type DialogProps = {
   title: string;
-  description: string;
+  description?: string;
   onClose: () => void;
   children: React.ReactNode;
 };
@@ -59,23 +59,28 @@ function Dialog({
   children,
 }: DialogProps) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-md rounded-2xl border border-[#e1e4e8] bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[#181b21]">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#181b21] p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-black">{title}</h2>
-            <p className="mt-1 text-sm text-[#858b95]">
-              {description}
-            </p>
+            <h2 className="text-lg font-black text-white">
+              {title}
+            </h2>
+
+            {description && (
+              <p className="mt-1 text-sm text-[#858b95]">
+                {description}
+              </p>
+            )}
           </div>
 
           <button
             type="button"
             onClick={onClose}
+            className="rounded-lg p-1.5 text-[#858b95] hover:bg-white/10 hover:text-white"
             aria-label="Close"
-            className="rounded-md p-1.5 text-[#858b95] hover:bg-black/5 dark:hover:bg-white/10"
           >
-            <X size={20} />
+            <X size={19} />
           </button>
         </div>
 
@@ -85,57 +90,198 @@ function Dialog({
   );
 }
 
+function percentage(
+  value: number | null,
+  target: number | null,
+) {
+  if (
+    value == null ||
+    target == null ||
+    target <= 0
+  ) {
+    return null;
+  }
+
+  return Math.min(
+    100,
+    Math.max(0, (value / target) * 100),
+  );
+}
+
+function targetAccuracy(
+  value: number | null,
+  target: number | null,
+) {
+  if (
+    value == null ||
+    target == null ||
+    target <= 0
+  ) {
+    return null;
+  }
+
+  return Math.max(
+    0,
+    1 - Math.abs(value - target) / target,
+  );
+}
+
+function leaderboardAccuracy(member: Member) {
+  const calorie = targetAccuracy(
+    member.calories,
+    member.calorie_target,
+  );
+
+  const protein = targetAccuracy(
+    member.protein,
+    member.protein_target,
+  );
+
+  const values = [calorie, protein].filter(
+    (value): value is number =>
+      value !== null,
+  );
+
+  if (!values.length) return null;
+
+  return (
+    values.reduce(
+      (sum, value) => sum + value,
+      0,
+    ) / values.length
+  );
+}
+
+function Metric({
+  label,
+  value,
+  target,
+  unit,
+}: {
+  label: string;
+  value: number | null;
+  target: number | null;
+  unit: string;
+}) {
+  const progress = percentage(
+    value,
+    target,
+  );
+
+  if (progress === null) return null;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2 text-[11px] font-bold">
+        <span>{label}</span>
+
+        <span className="whitespace-nowrap text-[#858b95]">
+          {Number(value ?? 0).toFixed(
+            label === "Calories" ? 0 : 1,
+          )}{" "}
+          /{" "}
+          {Number(target ?? 0).toFixed(
+            label === "Calories" ? 0 : 1,
+          )}{" "}
+          {unit}
+        </span>
+      </div>
+
+      <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-moss-500 transition-all"
+          style={{
+            width: `${progress}%`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function TogetherPage() {
-  const supabase = useMemo(() => createClient(), []);
-
-  const [groups, setGroups] = useState<any[]>([]);
-  const [groupId, setGroupId] = useState("");
-  const [members, setMembers] = useState<Member[]>([]);
-  const [owner, setOwner] = useState(false);
-
-  const [newGroupName, setNewGroupName] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
-  const [showGroupActions, setShowGroupActions] = useState(false);
-  const [showEditGroup, setShowEditGroup] = useState(false);
-  const [showDeleteGroup, setShowDeleteGroup] = useState(false);
-  const [showMembers, setShowMembers] = useState(false);
-
-  const [editGroupName, setEditGroupName] = useState("");
-  const [editJoinMode, setEditJoinMode] =
-    useState<"invite_only" | "link">("invite_only");
-
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const [joinMode, setJoinMode] =
-    useState<"invite_only" | "link">("invite_only");
-
-  const [joinLink, setJoinLink] = useState("");
-  const [invitations, setInvitations] = useState<any[]>([]);
-
-  const [day] = useState(
-    new Date().toISOString().slice(0, 10),
+  const supabase = useMemo(
+    () => createClient(),
+    [],
   );
 
   const SITE_URL =
     process.env.NEXT_PUBLIC_SITE_URL ??
     "https://macrotrack-ashy.vercel.app";
 
-  async function load(preferredGroupId?: string) {
+  const [groups, setGroups] = useState<any[]>(
+    [],
+  );
+  const [groupId, setGroupId] = useState("");
+  const [members, setMembers] = useState<Member[]>(
+    [],
+  );
+
+  const [owner, setOwner] = useState(false);
+
+  const [newGroupName, setNewGroupName] =
+    useState("");
+  const [inviteEmail, setInviteEmail] =
+    useState("");
+
+  const [joinMode, setJoinMode] =
+    useState<"invite_only" | "link">(
+      "invite_only",
+    );
+
+  const [editGroupName, setEditGroupName] =
+    useState("");
+  const [editJoinMode, setEditJoinMode] =
+    useState<"invite_only" | "link">(
+      "invite_only",
+    );
+
+  const [joinLink, setJoinLink] =
+    useState("");
+
+  const [invitations, setInvitations] =
+    useState<any[]>([]);
+
+  const [showCreateGroup, setShowCreateGroup] =
+    useState(false);
+  const [showInvite, setShowInvite] =
+    useState(false);
+  const [showActions, setShowActions] =
+    useState(false);
+  const [showMembers, setShowMembers] =
+    useState(false);
+  const [showEditGroup, setShowEditGroup] =
+    useState(false);
+  const [showDeleteGroup, setShowDeleteGroup] =
+    useState(false);
+
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const [expandedMeals, setExpandedMeals] =
+    useState<Record<string, boolean>>({});
+
+  const [expandedMembers, setExpandedMembers] =
+    useState<Record<string, boolean>>({});
+
+  const today =
+    new Date().toISOString().slice(0, 10);
+
+  async function load(
+    preferredGroupId?: string,
+  ) {
     setError("");
 
-    const { data: userData } =
-      await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const userId = userData.user?.id;
+    const userId = user?.id;
 
     const {
-      data: g,
-      error: groupsError,
+      data: groupRows,
+      error: groupError,
     } = await supabase
       .from("groups")
       .select(
@@ -145,66 +291,67 @@ export default function TogetherPage() {
         ascending: false,
       });
 
-    if (groupsError) {
-      setError(groupsError.message);
+    if (groupError) {
+      setError(groupError.message);
       return;
     }
 
-    const rows = g ?? [];
+    const rows = groupRows ?? [];
 
     setGroups(rows);
 
     const selected =
       rows.find(
-        (x) =>
-          x.id ===
+        (group) =>
+          group.id ===
           (preferredGroupId ?? groupId),
       ) ?? rows[0];
 
-    if (selected) {
-      setGroupId(selected.id);
-
-      setJoinLink(
-        selected.join_mode === "link" &&
-          selected.join_token
-          ? `${SITE_URL}/join/${selected.join_token}`
-          : "",
-      );
-
-      setOwner(
-        selected.created_by === userId,
-      );
-
-      const {
-        data: p,
-        error: progressError,
-      } = await supabase.rpc(
-        "group_shared_progress_v2",
-        {
-          target_group: selected.id,
-          selected_day: day,
-        },
-      );
-
-      if (progressError) {
-        setError(progressError.message);
-        setMembers([]);
-      } else {
-        setMembers(
-          (Array.isArray(p)
-            ? p
-            : []) as Member[],
-        );
-      }
-    } else {
+    if (!selected) {
       setGroupId("");
+      setMembers([]);
       setJoinLink("");
       setOwner(false);
+      return;
+    }
+
+    setGroupId(selected.id);
+
+    setOwner(
+      selected.created_by === userId,
+    );
+
+    setJoinLink(
+      selected.join_mode === "link" &&
+        selected.join_token
+        ? `${SITE_URL}/join/${selected.join_token}`
+        : "",
+    );
+
+    const {
+      data: progress,
+      error: progressError,
+    } = await supabase.rpc(
+      "group_shared_progress_v2",
+      {
+        target_group: selected.id,
+        selected_day: today,
+      },
+    );
+
+    if (progressError) {
+      setError(progressError.message);
       setMembers([]);
+    } else {
+      setMembers(
+        (Array.isArray(progress)
+          ? progress
+          : []) as Member[],
+      );
     }
 
     const {
-      data: i,
+      data: invitationData,
       error: invitationError,
     } = await supabase
       .from("group_invitations")
@@ -217,18 +364,24 @@ export default function TogetherPage() {
       setError(invitationError.message);
     }
 
-    setInvitations(i ?? []);
+    setInvitations(invitationData ?? []);
   }
 
   useEffect(() => {
     void load();
   }, []);
 
+  const selectedGroup = groups.find(
+    (group) => group.id === groupId,
+  );
+
   async function createGroup() {
     const name = newGroupName.trim();
 
     if (!name) {
-      setError("Give your group a name first.");
+      setError(
+        "Give your group a name first.",
+      );
       return;
     }
 
@@ -266,47 +419,26 @@ export default function TogetherPage() {
     setNewGroupName("");
     setJoinMode("invite_only");
     setShowCreateGroup(false);
+
     setMessage(
-      `"${name}" created. You're the owner.`,
+      `"${name}" created.`,
     );
 
     await load(data);
   }
 
-  const selectedGroup = groups.find(
-    (g) => g.id === groupId,
-  );
-
-  function openEditGroup() {
-    if (!selectedGroup || !owner) return;
-
-    setEditGroupName(
-      selectedGroup.name ?? "",
-    );
-
-    setEditJoinMode(
-      selectedGroup.join_mode === "link"
-        ? "link"
-        : "invite_only",
-    );
-
-    setShowGroupActions(false);
-    setError("");
-    setMessage("");
-    setShowEditGroup(true);
-  }
-
   async function updateGroup() {
     const name = editGroupName.trim();
 
-    if (!groupId || !owner || !name) {
-      setError("Give your group a name first.");
+    if (!name || !groupId || !owner) {
+      setError(
+        "Give your group a name first.",
+      );
       return;
     }
 
     setSaving(true);
     setError("");
-    setMessage("");
 
     const {
       error: updateError,
@@ -326,7 +458,11 @@ export default function TogetherPage() {
     }
 
     setShowEditGroup(false);
-    setMessage(`"${name}" updated.`);
+    setShowActions(false);
+
+    setMessage(
+      `"${name}" updated.`,
+    );
 
     await load(groupId);
   }
@@ -336,9 +472,8 @@ export default function TogetherPage() {
 
     setSaving(true);
     setError("");
-    setMessage("");
 
-    const groupName =
+    const name =
       selectedGroup?.name ?? "Group";
 
     const {
@@ -356,65 +491,12 @@ export default function TogetherPage() {
     }
 
     setShowDeleteGroup(false);
-    setShowGroupActions(false);
-
+    setShowActions(false);
     setMessage(
-      `"${groupName}" deleted.`,
+      `"${name}" deleted.`,
     );
 
     await load();
-  }
-
-  async function copyJoinLink() {
-    if (!joinLink) return;
-
-    await navigator.clipboard.writeText(
-      joinLink,
-    );
-
-    setMessage(
-      "Join link copied to your clipboard.",
-    );
-  }
-
-  async function regenerateJoinLink() {
-    if (!groupId || !owner) return;
-
-    setSaving(true);
-    setError("");
-
-    const {
-      data,
-      error: regenerateError,
-    } = await supabase.rpc(
-      "regenerate_group_join_token",
-      {
-        target_group: groupId,
-      },
-    );
-
-    setSaving(false);
-
-    if (regenerateError) {
-      setError(
-        regenerateError.message,
-      );
-      return;
-    }
-
-    const token = String(data || "");
-
-    const nextLink = token
-      ? `${SITE_URL}/join/${token}`
-      : "";
-
-    setJoinLink(nextLink);
-
-    setMessage(
-      "Join link regenerated. The old link no longer works.",
-    );
-
-    await load(groupId);
   }
 
   async function invite() {
@@ -425,7 +507,6 @@ export default function TogetherPage() {
 
     setSaving(true);
     setError("");
-    setMessage("");
 
     const {
       error: inviteError,
@@ -448,14 +529,78 @@ export default function TogetherPage() {
     setShowInvite(false);
 
     setMessage(
-      `Invitation sent to ${email}. They must accept it before joining.`,
+      `Invitation sent to ${email}.`,
     );
 
-    await load();
+    await load(groupId);
+  }
+
+  async function copyJoinLink() {
+    if (!joinLink) {
+      setError(
+        "This group does not currently have a join link.",
+      );
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        joinLink,
+      );
+
+      setMessage(
+        "Join link copied.",
+      );
+    } catch {
+      setError(
+        "Unable to copy the join link.",
+      );
+    }
+  }
+
+  async function regenerateJoinLink() {
+    if (!groupId || !owner) return;
+
+    setSaving(true);
+    setError("");
+    setShowActions(false);
+
+    const {
+      data,
+      error: regenerateError,
+    } = await supabase.rpc(
+      "regenerate_group_join_token",
+      {
+        target_group: groupId,
+      },
+    );
+
+    setSaving(false);
+
+    if (regenerateError) {
+      setError(
+        regenerateError.message,
+      );
+      return;
+    }
+
+    const token = String(data ?? "");
+
+    setJoinLink(
+      token
+        ? `${SITE_URL}/join/${token}`
+        : "",
+    );
+
+    setMessage(
+      "Join link regenerated.",
+    );
+
+    await load(groupId);
   }
 
   async function respond(
-    id: string,
+    invitationId: string,
     accept: boolean,
   ) {
     setError("");
@@ -467,12 +612,14 @@ export default function TogetherPage() {
         ? "accept_group_invitation"
         : "decline_group_invitation",
       {
-        invitation_id: id,
+        invitation_id: invitationId,
       },
     );
 
     if (responseError) {
-      setError(responseError.message);
+      setError(
+        responseError.message,
+      );
     } else {
       setMessage(
         accept
@@ -484,8 +631,10 @@ export default function TogetherPage() {
     await load();
   }
 
-  async function removeMember(userId: string) {
-    if (!groupId) return;
+  async function removeMember(
+    userId: string,
+  ) {
+    if (!groupId || !owner) return;
 
     setError("");
 
@@ -498,991 +647,680 @@ export default function TogetherPage() {
       .eq("user_id", userId);
 
     if (removeError) {
-      setError(removeError.message);
-    } else {
-      setMessage(
-        "Member removed from the group.",
+      setError(
+        removeError.message,
       );
+      return;
     }
+
+    setMessage(
+      "Member removed.",
+    );
 
     await load(groupId);
   }
 
-  const ranked = [...members].sort(
+  const rankedMembers = [...members].sort(
     (a, b) => {
-      const ap =
-        Math.round(
-          (
-            calculateGoalProgress(
-              Number(a.calories || 0),
-              Number(
-                a.calorie_target || 0,
-              ),
-            ) +
-            calculateGoalProgress(
-              Number(a.protein || 0),
-              Number(
-                a.protein_target || 0,
-              ),
-            )
-          ) / 2,
-        );
+      const aScore =
+        leaderboardAccuracy(a);
+      const bScore =
+        leaderboardAccuracy(b);
 
-      const bp =
-        Math.round(
-          (
-            calculateGoalProgress(
-              Number(b.calories || 0),
-              Number(
-                b.calorie_target || 0,
-              ),
-            ) +
-            calculateGoalProgress(
-              Number(b.protein || 0),
-              Number(
-                b.protein_target || 0,
-              ),
-            )
-          ) / 2,
-        );
+      if (
+        aScore === null &&
+        bScore === null
+      ) {
+        return 0;
+      }
 
-      return bp - ap;
+      if (aScore === null) return 1;
+      if (bScore === null) return -1;
+
+      return bScore - aScore;
     },
   );
 
-  const topScore = ranked.length
-    ? Math.round(
-        (
-          calculateGoalProgress(
-            Number(
-              ranked[0]?.calories || 0,
-            ),
-            Number(
-              ranked[0]
-                ?.calorie_target || 0,
-            ),
-          ) +
-          calculateGoalProgress(
-            Number(
-              ranked[0]?.protein || 0,
-            ),
-            Number(
-              ranked[0]
-                ?.protein_target || 0,
-            ),
-          )
-        ) / 2,
-      )
-    : 0;
+  function toggleMeals(userId: string) {
+    setExpandedMeals((current) => ({
+      ...current,
+      [userId]: !current[userId],
+    }));
+  }
+
+  function toggleMemberDetails(userId: string) {
+    setExpandedMembers((current) => ({
+      ...current,
+      [userId]: !current[userId],
+    }));
+  }
+
+  function openEdit() {
+    if (!selectedGroup) return;
+
+    setEditGroupName(
+      selectedGroup.name ?? "",
+    );
+
+    setEditJoinMode(
+      selectedGroup.join_mode === "link"
+        ? "link"
+        : "invite_only",
+    );
+
+    setShowActions(false);
+    setShowEditGroup(true);
+  }
 
   return (
     <>
-      <SectionHeading
-        eyebrow="Together"
-        title="Track together"
-        description="Choose invite-only or shareable-link groups. Nutrition data stays private according to each member's sharing settings."
-        action={
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setError("");
-                setShowCreateGroup(true);
-              }}
-              className="flex items-center gap-2 rounded-lg border border-moss-600 px-4 py-3 text-sm font-bold text-moss-700 hover:bg-moss-50 dark:text-moss-100 dark:hover:bg-moss-500/10"
-            >
-              <Plus size={17} />
-              Create group
-            </button>
+      {/* PAGE HEADER */}
+      <header className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-moss-500">
+            Together
+          </p>
 
-            <button
-              type="button"
-              onClick={() => {
-                setError("");
-                setShowInvite(true);
-              }}
-              disabled={!groupId || !owner}
-              className="flex items-center gap-2 rounded-lg bg-moss-600 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <UserPlus size={17} />
-              Invite member
-            </button>
-          </div>
-        }
-      />
+          <p className="mt-1 text-sm font-semibold text-[#858b95]">
+            Track your team and stay on target.
+          </p>
+        </div>
 
+        <button
+          type="button"
+          onClick={() => {
+            setError("");
+            setShowCreateGroup(true);
+          }}
+          className="flex shrink-0 items-center gap-2 rounded-lg bg-moss-600 px-3.5 py-2.5 text-sm font-bold text-white transition hover:bg-moss-700"
+        >
+          <Plus size={17} />
+          <span className="hidden sm:inline">
+            Create group
+          </span>
+        </button>
+      </header>
+
+      {/* MESSAGES */}
       {(message || error) && (
         <div
-          className={`mt-5 rounded-lg border px-4 py-3 text-sm font-semibold ${
+          className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${
             error
-              ? "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-200"
-              : "border-moss-500/20 bg-moss-500/10 text-moss-800 dark:text-moss-100"
+              ? "border-red-500/20 bg-red-500/10 text-red-200"
+              : "border-moss-500/20 bg-moss-500/10 text-moss-100"
           }`}
         >
           {error || message}
         </div>
       )}
 
+      {/* INVITATIONS */}
       {invitations.length > 0 && (
-        <section className="mt-5 rounded-lg border border-gold-200 bg-gold-50 p-4 dark:border-gold-500/20 dark:bg-gold-500/10">
-          <div className="flex items-center gap-2 font-bold">
-            <Shield size={18} />
+        <section className="mt-4 rounded-xl border border-gold-500/20 bg-gold-500/10 p-4">
+          <p className="font-bold">
             Pending invitations
-          </div>
+          </p>
 
-          {invitations.map((i) => (
-            <div
-              key={i.id}
-              className="mt-3 flex flex-wrap items-center gap-3 rounded-md bg-white p-3 dark:bg-white/5"
-            >
-              <div className="flex-1 text-sm">
-                <strong>
-                  {i.groups?.name ?? "Group"}
-                </strong>
+          <div className="mt-3 space-y-2">
+            {invitations.map((invitation) => (
+              <div
+                key={invitation.id}
+                className="flex flex-wrap items-center gap-3 rounded-lg bg-white/5 p-3"
+              >
+                <p className="min-w-0 flex-1 text-sm">
+                  <strong>
+                    {invitation.groups?.name ??
+                      "Group"}
+                  </strong>{" "}
+                  invited you to join.
+                </p>
 
-                <span className="ml-2 text-[#858b95]">
-                  You were invited to join.
-                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void respond(
+                      invitation.id,
+                      true,
+                    )
+                  }
+                  className="rounded-md bg-moss-600 px-3 py-2 text-xs font-bold text-white"
+                >
+                  Accept
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void respond(
+                      invitation.id,
+                      false,
+                    )
+                  }
+                  className="rounded-md border border-white/10 px-3 py-2 text-xs font-bold"
+                >
+                  Decline
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  void respond(i.id, true)
-                }
-                className="flex items-center gap-1 rounded-md bg-moss-600 px-3 py-2 text-xs font-bold text-white"
-              >
-                <Check size={15} />
-                Accept
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  void respond(i.id, false)
-                }
-                className="flex items-center gap-1 rounded-md border px-3 py-2 text-xs font-bold"
-              >
-                <X size={15} />
-                Decline
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
       )}
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-[260px_1fr]">
-        <aside className="rounded-lg border border-[#e1e4e8] bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#181b21]">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-bold">
+      {/* GROUP AREA */}
+      <div className="mt-5 grid gap-5 lg:grid-cols-[210px_minmax(0,1fr)]">
+        {/* GROUP SIDEBAR */}
+        <aside className="h-fit rounded-xl border border-white/10 bg-[#181b21] p-3">
+          <div className="flex items-center justify-between px-2 py-1">
+            <p className="text-sm font-black">
               Your groups
-            </h2>
+            </p>
 
             <button
               type="button"
               onClick={() =>
                 setShowCreateGroup(true)
               }
+              className="grid size-8 place-items-center rounded-lg border border-dashed border-white/20 hover:bg-white/10"
               aria-label="Create group"
-              className="grid size-8 place-items-center rounded-md border border-dashed hover:bg-black/5 dark:hover:bg-white/10"
             >
               <Plus size={16} />
             </button>
           </div>
 
-          <div className="mt-3 space-y-1">
-            {groups.map((g) => (
+          <div className="mt-2 space-y-1">
+            {groups.map((group) => (
               <button
+                key={group.id}
                 type="button"
-                key={g.id}
                 onClick={() => {
-                  setGroupId(g.id);
-
-                  setJoinLink(
-                    g.join_mode ===
-                      "link" &&
-                      g.join_token
-                      ? `${SITE_URL}/join/${g.join_token}`
-                      : "",
-                  );
-
+                  setGroupId(group.id);
                   setMessage("");
                   setError("");
 
-                  void load(g.id);
+                  void load(group.id);
                 }}
-                className={`w-full rounded-md px-3 py-2.5 text-left text-sm font-bold ${
-                  g.id === groupId
-                    ? "bg-moss-50 text-moss-700 dark:bg-moss-500/15 dark:text-moss-100"
-                    : "hover:bg-[#f3f4f6] dark:hover:bg-white/5"
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-bold ${
+                  group.id === groupId
+                    ? "bg-moss-500/15 text-moss-100"
+                    : "hover:bg-white/5"
                 }`}
               >
-                {g.name}
+                <span className="truncate">
+                  {group.name}
+                </span>
 
-                <span className="ml-2 text-xs opacity-60">
-                  {g.group_members?.length ??
+                <span className="ml-2 text-xs opacity-50">
+                  {group.group_members?.length ??
                     0}
                 </span>
               </button>
             ))}
 
             {!groups.length && (
-              <div className="rounded-lg border border-dashed p-4 text-center">
-                <p className="text-sm text-[#858b95]">
-                  Create your first group to
-                  start tracking together.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowCreateGroup(true)
-                  }
-                  className="mt-3 inline-flex items-center gap-2 rounded-md bg-moss-600 px-3 py-2 text-sm font-bold text-white"
-                >
-                  <Plus size={16} />
-                  Create group
-                </button>
+              <div className="px-2 py-6 text-center text-xs text-[#858b95]">
+                No groups yet.
               </div>
             )}
           </div>
         </aside>
 
-        <main>
-          <section className="rounded-xl bg-ink p-5 text-white shadow-sm sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-[#b8bcc5]">
-                  {selectedGroup?.name ??
-                    "No group selected"}
-                </p>
+        {/* CONTENT */}
+        <main className="min-w-0">
+          {!selectedGroup ? (
+            <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
+              <UsersRound
+                size={30}
+                className="mx-auto text-[#858b95]"
+              />
 
-                <h2 className="mt-1 text-2xl font-black tracking-tight">
-                  Today, together.
-                </h2>
-              </div>
+              <p className="mt-3 font-bold">
+                Create or join a group
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* GROUP HEADER */}
+              <section className="rounded-xl border border-white/10 bg-[#181b21] p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-xl font-black">
+                      {selectedGroup.name}
+                    </h2>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {/* FIXED MEMBERS BUTTON */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowMembers(true)
-                  }
-                  className="flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm font-bold transition hover:bg-white/15"
-                >
-                  <UsersRound size={16} />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowMembers(true)
+                      }
+                      className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-[#858b95] hover:text-white"
+                    >
+                      <UsersRound size={15} />
 
-                  {selectedGroup?.group_members
-                    ?.length ??
-                    members.length}{" "}
-                  members
-                </button>
+                      {selectedGroup.group_members
+                        ?.length ??
+                        members.length}{" "}
+                      members
+                    </button>
+                  </div>
 
-                {selectedGroup &&
-                  owner && (
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowGroupActions(
-                            (open) => !open,
-                          )
-                        }
-                        aria-label="Group settings"
-                        className="grid size-9 place-items-center rounded-md bg-white/10 hover:bg-white/15"
-                      >
-                        <MoreHorizontal
-                          size={18}
-                        />
-                      </button>
+                  {/* ALL GROUP ACTIONS */}
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowActions(
+                          (value) => !value,
+                        )
+                      }
+                      className="grid size-9 place-items-center rounded-lg border border-white/10 hover:bg-white/10"
+                      aria-label="Group options"
+                    >
+                      <MoreHorizontal
+                        size={19}
+                      />
+                    </button>
 
-                      {showGroupActions && (
-                        <div className="absolute right-0 top-11 z-20 w-44 overflow-hidden rounded-lg border border-white/10 bg-[#181b21] p-1 shadow-xl">
+                    {showActions && (
+                      <div className="absolute right-0 top-11 z-40 w-56 overflow-hidden rounded-xl border border-white/10 bg-[#181b21] p-1.5 shadow-2xl">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowActions(false);
+                            setShowMembers(true);
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-bold hover:bg-white/10"
+                        >
+                          <UsersRound size={15} />
+                          View members
+                        </button>
+
+                        {owner && (
                           <button
                             type="button"
-                            onClick={
-                              openEditGroup
-                            }
-                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-bold text-white hover:bg-white/10"
+                            onClick={() => {
+                              setShowActions(false);
+                              setShowInvite(true);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-bold hover:bg-white/10"
                           >
-                            <Pencil size={15} />
-                            Edit group
+                            <UserPlus size={15} />
+                            Invite member
                           </button>
+                        )}
 
-                          {selectedGroup?.join_mode ===
-                            "link" &&
-                            owner && (
+                        {selectedGroup.join_mode ===
+                          "link" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void copyJoinLink()
+                              }
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-bold hover:bg-white/10"
+                            >
+                              <Copy size={15} />
+                              Copy join link
+                            </button>
+
+                            {owner && (
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setShowGroupActions(
-                                    false,
-                                  );
-                                  void regenerateJoinLink();
-                                }}
-                                disabled={
-                                  saving
+                                onClick={() =>
+                                  void regenerateJoinLink()
                                 }
-                                className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-bold text-white hover:bg-white/10 disabled:opacity-50"
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-bold hover:bg-white/10"
                               >
                                 <RefreshCw
                                   size={15}
                                 />
-                                Regenerate join link
+                                Regenerate link
                               </button>
                             )}
+                          </>
+                        )}
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowGroupActions(
-                                false,
-                              );
-                              setShowDeleteGroup(
-                                true,
-                              );
-                              setError("");
-                              setMessage("");
-                            }}
-                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-bold text-red-300 hover:bg-red-500/10"
-                          >
-                            <Trash2 size={15} />
-                            Delete group
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        {owner && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={openEdit}
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-bold hover:bg-white/10"
+                            >
+                              <Pencil size={15} />
+                              Edit group
+                            </button>
 
-                {selectedGroup?.join_mode ===
-                  "link" &&
-                  joinLink &&
-                  owner && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void copyJoinLink()
-                      }
-                      className="flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm font-bold hover:bg-white/15"
-                    >
-                      <Copy size={15} />
-                      Copy join link
-                    </button>
-                  )}
-              </div>
-            </div>
+                            <div className="my-1 border-t border-white/10" />
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg bg-white/10 p-4">
-                <div className="flex items-center gap-2 text-sm text-[#cbd8cd]">
-                  <Trophy size={16} />
-                  Daily grind
-                </div>
-
-                <p className="mt-1 text-2xl font-black">
-                  {topScore}%
-                </p>
-
-                <p className="text-xs text-[#b8bcc5]">
-                  top goal completion
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-white/10 p-4">
-                <div className="flex items-center gap-2 text-sm text-[#cbd8cd]">
-                  <Flame size={16} />
-                  Group rhythm
-                </div>
-
-                <p className="mt-1 text-2xl font-black">
-                  {members.length
-                    ? "Active"
-                    : "—"}
-                </p>
-
-                <p className="text-xs text-[#b8bcc5]">
-                  keep logging consistently
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-white/10 p-4">
-                <div className="text-sm text-[#cbd8cd]">
-                  Privacy first
-                </div>
-
-                <p className="mt-1 text-sm font-bold">
-                  Targets stay personal
-                </p>
-
-                <p className="text-xs text-[#b8bcc5]">
-                  only shared metrics appear
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <div className="mt-5 grid gap-3">
-            {ranked.map((m, index) => {
-              const cp =
-                calculateGoalProgress(
-                  Number(
-                    m.calories || 0,
-                  ),
-                  Number(
-                    m.calorie_target ||
-                      0,
-                  ),
-                );
-
-              const pp =
-                calculateGoalProgress(
-                  Number(
-                    m.protein || 0,
-                  ),
-                  Number(
-                    m.protein_target ||
-                      0,
-                  ),
-                );
-
-              const score = Math.round(
-                (
-                  Math.min(cp, 100) +
-                  Math.min(pp, 100)
-                ) / 2,
-              );
-
-              return (
-                <article
-                  key={m.user_id}
-                  className="rounded-lg border border-[#e1e4e8] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#181b21]"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-moss-600 text-sm font-black text-white">
-                      {index + 1}
-                    </span>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-black">
-                          {m.name}
-                        </h3>
-
-                        {index === 0 && (
-                          <span className="rounded-full bg-gold-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-gold-700">
-                            Top today
-                          </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowActions(
+                                  false,
+                                );
+                                setShowDeleteGroup(
+                                  true,
+                                );
+                              }}
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-bold text-red-300 hover:bg-red-500/10"
+                            >
+                              <Trash2 size={15} />
+                              Delete group
+                            </button>
+                          </>
                         )}
                       </div>
+                    )}
+                  </div>
+                </div>
 
-                      <p className="mt-1 text-xs text-[#858b95]">
-                        Goal completion ·{" "}
-                        {score}%
-                      </p>
+              </section>
+
+              {/* LEADERBOARD */}
+              <div className="mt-3">
+                  <div className="mb-3 rounded-xl border border-white/10 bg-[#181b21] px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <Trophy
+                        size={16}
+                        className="text-gold-400"
+                      />
+
+                      <div>
+                        <p className="text-sm font-black">
+                          Today&apos;s leaderboard
+                        </p>
+
+                        <p className="mt-0.5 text-[11px] leading-4 text-[#858b95]">
+                          Members are ordered by how
+                          closely they are tracking
+                          their own shared calorie and
+                          protein targets.
+                        </p>
+                      </div>
                     </div>
-
-                    {owner &&
-                      index > 0 && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void removeMember(
-                              m.user_id,
-                            )
-                          }
-                          className="text-xs font-bold text-[#858b95] hover:text-red-600"
-                        >
-                          Remove
-                        </button>
-                      )}
                   </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {m.calorie_target !=
-                      null && (
-                      <div>
-                        <div className="flex justify-between text-xs font-bold">
-                          <span>
-                            Calories
-                          </span>
+                  <div className="grid grid-cols-1 gap-2">
+                    {rankedMembers.map(
+                      (member, index) => {
+                        const detailsOpen =
+                          Boolean(
+                            expandedMembers[
+                              member.user_id
+                            ],
+                          );
 
-                          <span>
-                            {m.calories ??
-                              0}{" "}
-                            /{" "}
-                            {
-                              m.calorie_target
-                            }{" "}
-                            kcal
-                          </span>
-                        </div>
+                        const hasSharedDetails =
+                          member.calories != null ||
+                          member.protein != null ||
+                          member.carbs != null ||
+                          member.fat != null ||
+                          member.weight_kg != null ||
+                          member.meal_details?.length > 0;
 
-                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e4e6ea]">
-                          <div
-                            className="h-full rounded-full bg-moss-600"
-                            style={{
-                              width: `${Math.min(
-                                cp,
-                                100,
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {m.protein_target !=
-                      null && (
-                      <div>
-                        <div className="flex justify-between text-xs font-bold">
-                          <span>
-                            Protein
-                          </span>
-
-                          <span>
-                            {m.protein ??
-                              0}{" "}
-                            /{" "}
-                            {
-                              m.protein_target
-                            }{" "}
-                            g
-                          </span>
-                        </div>
-
-                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e4e6ea]">
-                          <div
-                            className="h-full rounded-full bg-gold-400"
-                            style={{
-                              width: `${Math.min(
-                                pp,
-                                100,
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {m.carb_target !=
-                      null && (
-                      <div className="rounded-lg bg-[#f3f4f6] p-3 dark:bg-white/5">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span>
-                            Carbs
-                          </span>
-
-                          <span>
-                            {m.carbs ??
-                              0}{" "}
-                            /{" "}
-                            {
-                              m.carb_target
-                            }{" "}
-                            g
-                          </span>
-                        </div>
-
-                        <div className="mt-1 text-xs text-[#858b95]">
-                          Shared today
-                        </div>
-                      </div>
-                    )}
-
-                    {m.fat_target !=
-                      null && (
-                      <div className="rounded-lg bg-[#f3f4f6] p-3 dark:bg-white/5">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span>
-                            Fat
-                          </span>
-
-                          <span>
-                            {m.fat ??
-                              0}{" "}
-                            /{" "}
-                            {
-                              m.fat_target
-                            }{" "}
-                            g
-                          </span>
-                        </div>
-
-                        <div className="mt-1 text-xs text-[#858b95]">
-                          Shared today
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {m.weight_kg !=
-                    null && (
-                    <p className="mt-3 text-xs text-[#858b95]">
-                      Weight shared:{" "}
-                      {m.weight_kg} kg
-                    </p>
-                  )}
-
-                  {m.meal_details?.length >
-                    0 && (
-                    <details className="mt-4 rounded-lg border border-[#e1e4e8] p-3 dark:border-white/10">
-                      <summary className="cursor-pointer text-sm font-bold">
-                        View shared meals
-                      </summary>
-
-                      <div className="mt-3 space-y-2">
-                        {m.meal_details.map(
-                          (
-                            item,
-                            itemIndex,
-                          ) => (
-                            <div
-                              key={`${item.name}-${itemIndex}`}
-                              className="flex items-center justify-between gap-3 text-xs"
-                            >
-                              <div className="min-w-0">
-                                <p className="truncate font-bold">
-                                  {
-                                    item.name
-                                  }
-                                </p>
-
-                                <p className="text-[#858b95]">
-                                  {
-                                    item.meal
-                                  }{" "}
-                                  ·{" "}
-                                  {
-                                    item.grams
-                                  }{" "}
-                                  g
-                                </p>
+                        return (
+                          <article
+                            key={member.user_id}
+                            className={`rounded-lg border ${
+                              index === 0
+                                ? "border-gold-400/30 bg-gold-400/5"
+                                : "border-white/10 bg-[#181b21]"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 p-3">
+                              <div
+                                className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-black ${
+                                  index === 0
+                                    ? "bg-gold-400 text-black"
+                                    : "bg-white/10"
+                                }`}
+                              >
+                                {index === 0
+                                  ? "🥇"
+                                  : index === 1
+                                    ? "🥈"
+                                    : index === 2
+                                      ? "🥉"
+                                      : index + 1}
                               </div>
 
-                              <span className="shrink-0 text-[#858b95]">
-                                {
-                                  item.calories
-                                }{" "}
-                                kcal ·{" "}
-                                {
-                                  item.protein
-                                }
-                                g P
-                              </span>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    </details>
-                  )}
-                </article>
-              );
-            })}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="truncate text-sm font-black">
+                                    {member.name}
+                                  </p>
 
-            {!ranked.length && (
-              <div className="rounded-lg border border-dashed p-10 text-center text-sm text-[#858b95]">
-                Create a group or accept an
-                invitation to start tracking
-                together.
+                                  <p className="shrink-0 text-[10px] text-[#858b95]">
+                                    {index === 0
+                                      ? "Top today"
+                                      : `#${index + 1}`}
+                                  </p>
+                                </div>
+
+                                {(() => {
+                                  const progressValue =
+                                    member.calories != null
+                                      ? member.calories
+                                      : member.protein;
+                                  const progressTarget =
+                                    member.calories != null
+                                      ? member.calorie_target
+                                      : member.protein_target;
+                                  const progress = percentage(
+                                    progressValue,
+                                    progressTarget,
+                                  );
+
+                                  if (progress == null) return null;
+
+                                  return (
+                                    <div className="mt-1.5">
+                                      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                                        <div
+                                          className="h-full rounded-full bg-moss-500 transition-all"
+                                          style={{ width: `${progress}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toggleMemberDetails(
+                                    member.user_id,
+                                  )
+                                }
+                                className="grid size-8 shrink-0 place-items-center rounded-lg border border-white/10 text-[#858b95] transition hover:bg-white/10 hover:text-white"
+                                aria-label={`${detailsOpen ? "Hide" : "Show"} ${member.name}'s shared details`}
+                                aria-expanded={detailsOpen}
+                              >
+                                <ChevronDown
+                                  size={16}
+                                  className={`transition-transform ${
+                                    detailsOpen
+                                      ? "rotate-180"
+                                      : ""
+                                  }`}
+                                />
+                              </button>
+                            </div>
+
+                            {detailsOpen && (
+                              <div className="border-t border-white/10 px-3 pb-3 pt-2.5">
+                                {hasSharedDetails ? (
+                                  <div className="grid gap-2">
+                                    {member.calories != null && (
+                                      <Metric
+                                        label="Calories"
+                                        value={member.calories}
+                                        target={member.calorie_target}
+                                        unit="kcal"
+                                      />
+                                    )}
+
+                                    {member.protein != null && (
+                                      <Metric
+                                        label="Protein"
+                                        value={member.protein}
+                                        target={member.protein_target}
+                                        unit="g"
+                                      />
+                                    )}
+
+                                    {member.carbs != null && (
+                                      <Metric
+                                        label="Carbs"
+                                        value={member.carbs}
+                                        target={member.carb_target}
+                                        unit="g"
+                                      />
+                                    )}
+
+                                    {member.fat != null && (
+                                      <Metric
+                                        label="Fat"
+                                        value={member.fat}
+                                        target={member.fat_target}
+                                        unit="g"
+                                      />
+                                    )}
+
+                                    {member.weight_kg != null && (
+                                      <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-[11px]">
+                                        <span className="text-[#858b95]">
+                                          Weight
+                                        </span>
+                                        <span className="font-bold">
+                                          {member.weight_kg} kg
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {member.meal_details?.length > 0 && (
+                                      <div className="overflow-hidden rounded-lg border border-white/10">
+                                        <div className="px-3 py-2 text-[11px] font-bold">
+                                          Shared meals
+                                        </div>
+                                        <div className="border-t border-white/10">
+                                          {member.meal_details.map(
+                                            (meal, mealIndex) => (
+                                              <div
+                                                key={`${member.user_id}-shared-${mealIndex}`}
+                                                className="flex items-center justify-between gap-3 px-3 py-2 text-[11px]"
+                                              >
+                                                <div className="min-w-0">
+                                                  <p className="truncate font-semibold">
+                                                    {meal.name}
+                                                  </p>
+                                                  <p className="text-[#858b95]">
+                                                    {meal.meal} · {meal.grams}g
+                                                  </p>
+                                                </div>
+                                                <span className="shrink-0 text-[#858b95]">
+                                                  {Math.round(meal.calories)} kcal
+                                                </span>
+                                              </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="py-1 text-[11px] text-[#858b95]">
+                                    No additional details shared.
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </article>
+                        );
+                      },
+                    )}
+                  </div>
               </div>
-            )}
-          </div>
+            </>
+          )}
         </main>
       </div>
 
-      {/* MEMBERS MODAL */}
+      {/* MEMBERS */}
       {showMembers && (
         <Dialog
           title="Group members"
-          description={`Members of ${selectedGroup?.name ?? "this group"}.`}
+          description={`Members of ${
+            selectedGroup?.name ?? "this group"
+          }.`}
           onClose={() =>
             setShowMembers(false)
           }
         >
           <div className="mt-5 space-y-2">
-            {members.length > 0 ? (
-              members.map((member) => (
-                <div
-                  key={member.user_id}
-                  className="rounded-xl border border-[#e1e4e8] p-4 dark:border-white/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="grid size-10 place-items-center rounded-full bg-moss-600 text-sm font-black text-white">
-                      {member.name
+            {selectedGroup?.group_members?.map(
+              (groupMember: any) => {
+                const member =
+                  members.find(
+                    (item) =>
+                      item.user_id ===
+                      groupMember.user_id,
+                  );
+
+                return (
+                  <div
+                    key={groupMember.user_id}
+                    className="flex items-center gap-3 rounded-xl border border-white/10 p-3"
+                  >
+                    <div className="grid size-9 place-items-center rounded-full bg-moss-600 text-sm font-black text-white">
+                      {member?.name
                         ?.charAt(0)
                         ?.toUpperCase() ??
                         "M"}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold">
-                        {member.name}
+                      <p className="truncate font-bold">
+                        {member?.name ??
+                          "Member"}
                       </p>
 
                       <p className="text-xs text-[#858b95]">
-                        {member.calories ??
-                          0}{" "}
-                        kcal ·{" "}
-                        {member.protein ??
-                          0}
-                        g protein
+                        {member
+                          ? "Shared progress available"
+                          : "Private progress"}
                       </p>
                     </div>
+
+                    {owner &&
+                      groupMember.user_id !==
+                        selectedGroup.created_by && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void removeMember(
+                              groupMember.user_id,
+                            )
+                          }
+                          className="text-xs font-bold text-[#858b95] hover:text-red-300"
+                        >
+                          Remove
+                        </button>
+                      )}
                   </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-lg bg-[#f3f4f6] p-2 dark:bg-white/5">
-                      <span className="text-[#858b95]">
-                        Carbs
-                      </span>
-                      <p className="font-bold">
-                        {member.carbs ??
-                          0}{" "}
-                        g
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg bg-[#f3f4f6] p-2 dark:bg-white/5">
-                      <span className="text-[#858b95]">
-                        Fat
-                      </span>
-                      <p className="font-bold">
-                        {member.fat ??
-                          0}{" "}
-                        g
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg bg-[#f3f4f6] p-2 dark:bg-white/5">
-                      <span className="text-[#858b95]">
-                        Weight
-                      </span>
-                      <p className="font-bold">
-                        {member.weight_kg !=
-                        null
-                          ? `${member.weight_kg} kg`
-                          : "Private"}
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg bg-[#f3f4f6] p-2 dark:bg-white/5">
-                      <span className="text-[#858b95]">
-                        Meals
-                      </span>
-                      <p className="font-bold">
-                        {member.meal_details
-                          ?.length ??
-                          0}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-xl border border-dashed p-6 text-center text-sm text-[#858b95]">
-                No shared member data is
-                available yet.
-              </div>
+                );
+              },
             )}
           </div>
-
-          {selectedGroup?.group_members
-            ?.length >
-            members.length && (
-            <p className="mt-4 rounded-lg bg-gold-500/10 p-3 text-xs text-[#858b95]">
-              Some group members haven't
-              shared progress data. Their
-              personal nutrition data remains
-              private until their sharing
-              settings allow it.
-            </p>
-          )}
         </Dialog>
       )}
 
-      {showEditGroup &&
-        selectedGroup && (
-          <Dialog
-            title="Edit group"
-            description="Update the group name or change who can join. Existing members stay in the group."
-            onClose={() => {
-              if (!saving)
-                setShowEditGroup(false);
-            }}
-          >
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                void updateGroup();
-              }}
-            >
-              <label
-                className="mt-5 block text-sm font-bold"
-                htmlFor="edit-group-name"
-              >
-                Group name
-              </label>
-
-              <input
-                id="edit-group-name"
-                autoFocus
-                value={editGroupName}
-                onChange={(e) =>
-                  setEditGroupName(
-                    e.target.value,
-                  )
-                }
-                maxLength={80}
-                className="mt-2 w-full rounded-lg border border-[#e1e4e8] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
-              />
-
-              <fieldset className="mt-5">
-                <legend className="text-sm font-bold">
-                  Who can join?
-                </legend>
-
-                <div className="mt-2 grid gap-2">
-                  <label
-                    className={`cursor-pointer rounded-lg border p-3 ${
-                      editJoinMode ===
-                      "invite_only"
-                        ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10"
-                        : "border-[#e1e4e8] dark:border-white/10"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="edit-join-mode"
-                      value="invite_only"
-                      checked={
-                        editJoinMode ===
-                        "invite_only"
-                      }
-                      onChange={() =>
-                        setEditJoinMode(
-                          "invite_only",
-                        )
-                      }
-                      className="mr-2"
-                    />
-
-                    <span className="font-bold">
-                      Invite only
-                    </span>
-
-                    <span className="mt-1 block pl-5 text-xs text-[#858b95]">
-                      Only people you invite
-                      can join.
-                    </span>
-                  </label>
-
-                  <label
-                    className={`cursor-pointer rounded-lg border p-3 ${
-                      editJoinMode === "link"
-                        ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10"
-                        : "border-[#e1e4e8] dark:border-white/10"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="edit-join-mode"
-                      value="link"
-                      checked={
-                        editJoinMode ===
-                        "link"
-                      }
-                      onChange={() =>
-                        setEditJoinMode(
-                          "link",
-                        )
-                      }
-                      className="mr-2"
-                    />
-
-                    <span className="font-bold">
-                      Anyone with the link
-                    </span>
-
-                    <span className="mt-1 block pl-5 text-xs text-[#858b95]">
-                      Anyone with the private
-                      link can join after
-                      signing in.
-                    </span>
-                  </label>
-                </div>
-              </fieldset>
-
-              <button
-                type="submit"
-                disabled={
-                  saving ||
-                  !editGroupName.trim()
-                }
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-moss-600 px-4 py-3 font-bold text-white disabled:opacity-40"
-              >
-                <Pencil size={16} />
-
-                {saving
-                  ? "Saving…"
-                  : "Save changes"}
-              </button>
-            </form>
-          </Dialog>
-        )}
-
-      {showDeleteGroup &&
-        selectedGroup && (
-          <Dialog
-            title="Delete group?"
-            description="This permanently removes the group, its memberships, invitations, and group activity. Your personal food and weight history will not be deleted."
-            onClose={() => {
-              if (!saving)
-                setShowDeleteGroup(false);
-            }}
-          >
-            <div className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm">
-              <p className="font-bold">
-                {selectedGroup.name}
-              </p>
-
-              <p className="mt-1 text-[#858b95]">
-                This action cannot be undone.
-              </p>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  setShowDeleteGroup(false)
-                }
-                disabled={saving}
-                className="rounded-lg border px-4 py-3 font-bold disabled:opacity-40"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  void deleteGroup()
-                }
-                disabled={saving}
-                className="rounded-lg bg-red-600 px-4 py-3 font-bold text-white disabled:opacity-40"
-              >
-                {saving
-                  ? "Deleting…"
-                  : "Delete group"}
-              </button>
-            </div>
-          </Dialog>
-        )}
-
+      {/* CREATE GROUP */}
       {showCreateGroup && (
         <Dialog
           title="Create a group"
-          description="Choose who can join. You can share a private link or keep the group invite-only."
+          description="Choose how people can join."
           onClose={() => {
             if (!saving)
               setShowCreateGroup(false);
@@ -1495,98 +1333,64 @@ export default function TogetherPage() {
             }}
           >
             <label
+              htmlFor="new-group-name"
               className="mt-5 block text-sm font-bold"
-              htmlFor="group-name"
             >
               Group name
             </label>
 
             <input
-              id="group-name"
+              id="new-group-name"
               autoFocus
               value={newGroupName}
-              onChange={(e) =>
+              onChange={(event) =>
                 setNewGroupName(
-                  e.target.value,
+                  event.target.value,
                 )
               }
-              placeholder="e.g. Gym Bros"
               maxLength={80}
-              className="mt-2 w-full rounded-lg border border-[#e1e4e8] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
+              placeholder="e.g. Gym Bros"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 outline-none focus:border-moss-500"
             />
 
-            <fieldset className="mt-5">
-              <legend className="text-sm font-bold">
-                Who can join?
-              </legend>
-
-              <div className="mt-2 grid gap-2">
-                <label
-                  className={`cursor-pointer rounded-lg border p-3 ${
+            <div className="mt-5 grid gap-2">
+              <label className="rounded-lg border border-white/10 p-3">
+                <input
+                  type="radio"
+                  checked={
                     joinMode ===
                     "invite_only"
-                      ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10"
-                      : "border-[#e1e4e8] dark:border-white/10"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="join-mode"
-                    value="invite_only"
-                    checked={
-                      joinMode ===
-                      "invite_only"
-                    }
-                    onChange={() =>
-                      setJoinMode(
-                        "invite_only",
-                      )
-                    }
-                    className="mr-2"
-                  />
+                  }
+                  onChange={() =>
+                    setJoinMode(
+                      "invite_only",
+                    )
+                  }
+                  className="mr-2"
+                />
 
-                  <span className="font-bold">
-                    Invite only
-                  </span>
+                <span className="font-bold">
+                  Invite only
+                </span>
+              </label>
 
-                  <span className="mt-1 block pl-5 text-xs text-[#858b95]">
-                    Only people you invite
-                    can join.
-                  </span>
-                </label>
-
-                <label
-                  className={`cursor-pointer rounded-lg border p-3 ${
+              <label className="rounded-lg border border-white/10 p-3">
+                <input
+                  type="radio"
+                  checked={
                     joinMode === "link"
-                      ? "border-moss-500 bg-moss-50 dark:bg-moss-500/10"
-                      : "border-[#e1e4e8] dark:border-white/10"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="join-mode"
-                    value="link"
-                    checked={
-                      joinMode === "link"
-                    }
-                    onChange={() =>
-                      setJoinMode("link")
-                    }
-                    className="mr-2"
-                  />
+                  }
+                  onChange={() =>
+                    setJoinMode("link")
+                  }
+                  className="mr-2"
+                />
 
-                  <span className="font-bold">
-                    Anyone with the link
-                  </span>
-
-                  <span className="mt-1 block pl-5 text-xs text-[#858b95]">
-                    Anyone with the private
-                    link can join after
-                    signing in.
-                  </span>
-                </label>
-              </div>
-            </fieldset>
+                <span className="font-bold">
+                  Anyone with the link
+                </span>
+              </label>
+            </div>
 
             <button
               type="submit"
@@ -1594,10 +1398,8 @@ export default function TogetherPage() {
                 saving ||
                 !newGroupName.trim()
               }
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-moss-600 px-4 py-3 font-bold text-white disabled:opacity-40"
+              className="mt-4 w-full rounded-lg bg-moss-600 px-4 py-3 font-bold text-white disabled:opacity-40"
             >
-              <Plus size={17} />
-
               {saving
                 ? "Creating…"
                 : "Create group"}
@@ -1606,10 +1408,11 @@ export default function TogetherPage() {
         </Dialog>
       )}
 
+      {/* INVITE */}
       {showInvite && (
         <Dialog
           title="Invite a member"
-          description="They must accept the invitation before they can see or join the group."
+          description="Send an invitation to another MacroTrack user."
           onClose={() => {
             if (!saving)
               setShowInvite(false);
@@ -1622,10 +1425,10 @@ export default function TogetherPage() {
             }}
           >
             <label
-              className="mt-5 block text-sm font-bold"
               htmlFor="invite-email"
+              className="mt-5 block text-sm font-bold"
             >
-              Email address
+              Email
             </label>
 
             <input
@@ -1633,22 +1436,20 @@ export default function TogetherPage() {
               autoFocus
               type="email"
               value={inviteEmail}
-              onChange={(e) =>
+              onChange={(event) =>
                 setInviteEmail(
-                  e.target.value,
+                  event.target.value,
                 )
               }
               placeholder="friend@example.com"
-              className="mt-2 w-full rounded-lg border border-[#e1e4e8] bg-white px-3 py-3 outline-none focus:border-moss-500 dark:border-white/10 dark:bg-white/5"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 outline-none focus:border-moss-500"
             />
 
             <button
               type="submit"
               disabled={
                 saving ||
-                !inviteEmail.trim() ||
-                !groupId ||
-                !owner
+                !inviteEmail.trim()
               }
               className="mt-4 w-full rounded-lg bg-moss-600 px-4 py-3 font-bold text-white disabled:opacity-40"
             >
@@ -1657,6 +1458,145 @@ export default function TogetherPage() {
                 : "Send invitation"}
             </button>
           </form>
+        </Dialog>
+      )}
+
+      {/* EDIT */}
+      {showEditGroup && (
+        <Dialog
+          title="Edit group"
+          description="Change the group name or join method."
+          onClose={() => {
+            if (!saving)
+              setShowEditGroup(false);
+          }}
+        >
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void updateGroup();
+            }}
+          >
+            <label
+              htmlFor="edit-group-name"
+              className="mt-5 block text-sm font-bold"
+            >
+              Group name
+            </label>
+
+            <input
+              id="edit-group-name"
+              autoFocus
+              value={editGroupName}
+              onChange={(event) =>
+                setEditGroupName(
+                  event.target.value,
+                )
+              }
+              maxLength={80}
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 outline-none focus:border-moss-500"
+            />
+
+            <div className="mt-5 grid gap-2">
+              <label className="rounded-lg border border-white/10 p-3">
+                <input
+                  type="radio"
+                  checked={
+                    editJoinMode ===
+                    "invite_only"
+                  }
+                  onChange={() =>
+                    setEditJoinMode(
+                      "invite_only",
+                    )
+                  }
+                  className="mr-2"
+                />
+
+                <span className="font-bold">
+                  Invite only
+                </span>
+              </label>
+
+              <label className="rounded-lg border border-white/10 p-3">
+                <input
+                  type="radio"
+                  checked={
+                    editJoinMode === "link"
+                  }
+                  onChange={() =>
+                    setEditJoinMode("link")
+                  }
+                  className="mr-2"
+                />
+
+                <span className="font-bold">
+                  Anyone with the link
+                </span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={
+                saving ||
+                !editGroupName.trim()
+              }
+              className="mt-4 w-full rounded-lg bg-moss-600 px-4 py-3 font-bold text-white disabled:opacity-40"
+            >
+              {saving
+                ? "Saving…"
+                : "Save changes"}
+            </button>
+          </form>
+        </Dialog>
+      )}
+
+      {/* DELETE */}
+      {showDeleteGroup && (
+        <Dialog
+          title="Delete group?"
+          description="Your personal nutrition history will not be deleted."
+          onClose={() => {
+            if (!saving)
+              setShowDeleteGroup(false);
+          }}
+        >
+          <div className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 p-4">
+            <p className="font-bold">
+              {selectedGroup?.name}
+            </p>
+
+            <p className="mt-1 text-sm text-[#858b95]">
+              This group and its memberships
+              cannot be recovered.
+            </p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setShowDeleteGroup(false)
+              }
+              className="rounded-lg border border-white/10 px-4 py-3 font-bold"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                void deleteGroup()
+              }
+              disabled={saving}
+              className="rounded-lg bg-red-600 px-4 py-3 font-bold text-white disabled:opacity-40"
+            >
+              {saving
+                ? "Deleting…"
+                : "Delete group"}
+            </button>
+          </div>
         </Dialog>
       )}
     </>

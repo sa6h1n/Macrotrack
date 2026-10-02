@@ -47,9 +47,52 @@ function mapLog(row: any): FoodLog {
   };
 }
 
-function ProgressRing({ label, value, target, unit, hue }: { label: string; value: number; target: number; unit: string; hue: string }) {
-  const progress = Math.min(calculateGoalProgress(value, target), 100);
-  return <div className="flex items-center gap-3"><div className="grid size-[66px] shrink-0 place-items-center rounded-full" style={{ background: `conic-gradient(${hue} ${progress * 3.6}deg, #e4e6ea 0deg)` }}><div className="grid size-[54px] place-items-center rounded-full bg-white text-[11px] font-bold dark:bg-[#181b21]">{progress}%</div></div><div><p className="text-sm font-semibold">{label}</p><p className="mt-1 text-sm text-[#737983] dark:text-[#aeb4bf]"><span className="font-bold text-ink dark:text-white">{formatNumber(value, 1)}</span> / {formatNumber(target)} {unit}</p></div></div>;
+function ProgressRing({
+  label,
+  value,
+  target,
+  unit,
+  hue,
+}: {
+  label: string;
+  value: number;
+  target: number;
+  unit: string;
+  hue: string;
+}) {
+  const progress = Math.min(
+    calculateGoalProgress(value, target),
+    100,
+  );
+
+  return (
+    <div className="flex min-w-0 flex-col items-center text-center">
+      <div
+        className="grid size-[52px] shrink-0 place-items-center rounded-full"
+        style={{
+          background: `conic-gradient(${hue} ${
+            progress * 3.6
+          }deg, #e4e6ea 0deg)`,
+        }}
+      >
+        <div className="grid size-[44px] place-items-center rounded-full bg-white text-[9px] font-bold dark:bg-[#181b21]">
+          {progress}%
+        </div>
+      </div>
+
+      <p className="mt-2 text-xs font-bold">
+        {label}
+      </p>
+
+      <p className="mt-0.5 whitespace-nowrap text-[10px] text-[#737983] dark:text-[#aeb4bf]">
+        <span className="font-bold text-ink dark:text-white">
+          {formatNumber(value, 1)}
+        </span>{" "}
+        / {formatNumber(target)}
+        {unit}
+      </p>
+    </div>
+  );
 }
 
 function DashboardContent() {
@@ -163,22 +206,26 @@ const greeting =
   );
 
   return <>
-    <header className="flex items-start justify-between gap-4">
+    <header className="flex items-center justify-between gap-3">
   <div className="min-w-0">
-    <p className="text-sm font-medium text-[#858b95] dark:text-[#aeb4bf]">
+    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#858b95] dark:text-[#8f96a2]">
       {date}
     </p>
 
-    <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
-      {greeting}, {profile.name}.
+    <h1 className="mt-1 text-[17px] font-extrabold uppercase tracking-[0.08em]">
+      {greeting}
+      <span className="mx-1.5 text-[#6957d8]">·</span>
+      <span className="text-[#bfc3cb]">
+        {profile.name}
+      </span>
     </h1>
   </div>
 
   <button
     onClick={() => openAdd()}
-    className="hidden items-center gap-2 rounded-lg bg-moss-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-moss-700 sm:flex"
+    className="hidden items-center gap-2 rounded-lg bg-[#6957d8] px-3.5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#5f4ec7] sm:flex"
   >
-    <Plus size={18} />
+    <Plus size={17} />
     Add food
   </button>
 </header>
@@ -239,7 +286,7 @@ const greeting =
   </div>
 </section>
 
-<section className="mt-7 grid gap-3 sm:grid-cols-3">
+<section className="mt-5 grid grid-cols-3 gap-2">
   <ProgressRing
     label="Protein"
     value={totals.protein}
@@ -326,14 +373,6 @@ const greeting =
     unit="g"
   />
 </section>
-
-<button
-  onClick={() => openAdd()}
-  className="fixed bottom-20 right-4 z-10 flex items-center gap-2 rounded-lg bg-[#6957d8] px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#5f4ec7] lg:hidden"
->
-  <Plus size={19} />
-  Add food
-</button>
 
 {message && (
   <div className="fixed bottom-24 left-1/2 z-30 max-w-[90vw] -translate-x-1/2 rounded-lg bg-[#17191d] px-4 py-3 text-sm font-semibold text-white shadow-lg lg:bottom-8">
